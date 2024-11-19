@@ -91,12 +91,13 @@ function UILoop
 function mainFunc
 {
     $changedNetwork = $false
-    $oldAddress = CurrentAddress
+    $DHCP = $false
     $oldGateway = CurrentGateway
-    $DHCP = IsUsingDhcp
 
-    if ($oldGateway -ne $DVR_GATEWAY)
+    if (-not ($oldGateway -and $oldGateway -eq $DVR_GATEWAY))
     {
+        $oldAddress = CurrentAddress
+        $DHCP = IsUsingDhcp
         CheckAdmin($PSCommandPath)
         Write-Host "Not on dvr network. Switching..."
         Set-Static -Address $ADDRESS_ON_DVR_LAN -Gateway $DVR_GATEWAY
@@ -123,7 +124,7 @@ function mainFunc
             Set-Static -Address $oldAddress -Gateway $oldGateway
         }
     }
-#    Read-Host "Press Enter to exit..."
+    #    Read-Host "Press Enter to exit..."
 }
 
 mainFunc
