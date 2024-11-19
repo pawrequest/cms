@@ -11,6 +11,7 @@ function CurrentGateway
         $res = $gateway.NextHop
         return $res
     }
+    Write-Host "No Current Gateway: $gateway"
     return $null
 }
 
@@ -22,27 +23,40 @@ function CurrentAddress
         $res = $address.IPAddress
         return $res
     }
+    Write-Host "No Current Address: $address"
     return $null
 }
 
 function CurrentSubnetMask
 {
-    return Get-WmiObject Win32_NetworkAdapterConfiguration | Where IPEnabled |  Select-Object -First 1 | Select -ExpandProperty IPSubnet | Select-Object -First 1
+    $res = Get-WmiObject Win32_NetworkAdapterConfiguration | Where IPEnabled |  Select-Object -First 1 | Select -ExpandProperty IPSubnet | Select-Object -First 1
+    if ($res){
+        return $res
+    }
+    Write-Host "No Current subnet: $res"
 }
 
 function IsReachable([string]$ComputerName, [int]$PingCount = 1)
 {
-    return Test-Connection -ComputerName $ComputerName -Count $PingCount -Quiet -ErrorAction SilentlyContinue
+    $reachres = Test-Connection -ComputerName $ComputerName -Count $PingCount -Quiet -ErrorAction SilentlyContinue
+    if ($reachres -eq $true){
+        Write-Host "$ComputerName is reachable"
+    }
+    else
+    {
+        Write-Host "$ComputerName is NOT reachable"
+    }
+    return $reachres
 }
 
 
 function RetryReachable(
         [string]$ComputerName,
-        [int]$MaxTries = 30
+        [int]$MaxTries = 20
 )
 {
-    for ($i = 1; $i -le $MaxTries; $i++) {
-        if (IsReachable -ComputerName $ComputerName)
+    for ($i = 1; $i -lt $MaxTries; $i++) {
+        if ((IsReachable -ComputerName $ComputerName) -eq $true)
         {
             write-host "$ComputerName is reachable after $i attempt(s)."
             return $true
@@ -68,13 +82,10 @@ function Set-Static(
         [string]$Dns2 = $DNS2
 )
 {
-    Write-Host "Setting ip to $Address"
-    Write-Host "Setting gateway to $Gateway"
     netsh interface ip set dns name=$INTERFACE_NAME static address=$Dns1
-    #    netsh interface ip set dns name=$INTERFACE_NAME static address=$Dns2
-    netsh interface ip set address name=$INTERFACE_NAME source=static address=$Address $SUBNET_MASK $Gateway
-
-
+#    netsh interface ip set dns name=$INTERFACE_NAME static address=$Dns2
+    $res = netsh interface ip set address name=$INTERFACE_NAME source=static address=$Address $SUBNET_MASK $Gateway
+    Write-Host "network updated: Address=$Address, Gateway=$Gateway, DNS1=$Dns1"
 }
 
 function IsUsingDhcp()

@@ -1,20 +1,11 @@
-$ethScript = Join-Path $PSScriptRoot '\eth.ps1'
-. $ethScript
-
-
-$ADDRESS_ON_DVR_LAN = "192.168.1.127"
-$DVR_GATEWAY = "192.168.1.254"
-$DVR_IP = "192.168.1.10"
-
-# video stuff
-$VIDEO_PLAYER = "C:\Program Files (x86)\VideoLAN\VLC\vlc.exe"
-$RTSP_USER = $env:RTSP_USER
-$RTSP_PASS = $env:RTSP_PASS
-$FRONT_CHANNELS = @(1, 2, 6, 8)
-$DOOR_CHANNELS = @(2, 6)
-$OFF_CHANNELS = @(4, 10)
-$STREAM_QUALITY = 1 # 0: high quality, 1: low quality
-
+$script:VIDEO_PLAYER = "C:\Program Files (x86)\VideoLAN\VLC\vlc.exe"
+$script:RTSP_USER = $env:RTSP_USER
+$script:RTSP_PASS = $env:RTSP_PASS
+$script:FRONT_CHANNELS = @(1, 2, 6, 8)
+$script:FRONT_MAIN = @(1)
+$script:DOOR_CHANNELS = @(2, 6)
+$script:OFF_CHANNELS = @(4, 10)
+$script:STREAM_QUALITY = 1 # 0: high quality, 1: low quality
 
 function Open-Chanel(
         [int]$Channel,
@@ -25,23 +16,17 @@ function Open-Chanel(
     Write-Host "Launching channel $Channel..."
     $baseUrl = "rtsp://${RTSP_USER}:${RTSP_PASS}@192.168.1.10:554"
     $url = $baseUrl + "?codec=$Codec&channel=$Channel&stream=$Stream.sdp&real_stream--rtp-caching=100"
-    Start-Process -FilePath $VIDEO_PLAYER -ArgumentList $url
+    Start-Process -FilePath $script:VIDEO_PLAYER -ArgumentList $url
 }
 
 
-function UILoop
+function UILoop($Channels = $script:FRONT_MAIN)
 {
-    $StreamQuality = $STREAM_QUALITY
-    $channels = $FRONT_CHANNELS
-    if ($args)
-    {
-        $channels = $args
-    }
     while ($true)
     {
-        foreach ($channel in $channels)
+        foreach ($channel in $Channels)
         {
-            Open-Chanel -Channel $channel -Stream $StreamQuality
+            Open-Chanel -Channel $channel -Stream $script:STREAM_QUALITY
         }
         $inputted = Read-Host "[d]oors, [f]ront, [o]ffice, [r]efresh, [u]pgrade quality, [y]downgrade quality, or else tidy up and close..."
         Stop-Process -Name "vlc" -Force -ErrorAction SilentlyContinue
@@ -54,29 +39,29 @@ function UILoop
         elseif ($inputted -ieq "u")
         {
             Write-Host "Upgrading Stream Quality..."
-            $StreamQuality = 0
+            $script:STREAM_QUALITY = 0
         }
 
         elseif ($inputted -ieq "y")
         {
             Write-Host "Downgrading Stream Quality..."
-            $StreamQuality = 1
+            $script:STREAM_QUALITY = 1
         }
 
         elseif ($inputted -ieq "f")
         {
             Write-Host "Switching to front channels..."
-            $channels = $FRONT_CHANNELS
+            $Channels = $FRONT_CHANNELS
         }
         elseif ($inputted -ieq "d")
         {
             Write-Host "Switching to door channels..."
-            $channels = $DOOR_CHANNELS
+            $Channels = $DOOR_CHANNELS
         }
         elseif ($inputted -ieq "o")
         {
             Write-Host "Switching to office channels..."
-            $channels = $OFF_CHANNELS
+            $Channels = $OFF_CHANNELS
         }
 
         else
@@ -88,43 +73,14 @@ function UILoop
 }
 
 
-function mainFunc
+If ((Resolve-Path -Path $MyInvocation.InvocationName).ProviderPath -eq $MyInvocation.MyCommand.Path)
 {
-    $changedNetwork = $false
-    $DHCP = $false
-    $oldGateway = CurrentGateway
-
-    if (-not ($oldGateway -and $oldGateway -eq $DVR_GATEWAY))
+    if ($args)
     {
-        $oldAddress = CurrentAddress
-        $DHCP = IsUsingDhcp
-        CheckAdmin($PSCommandPath)
-        Write-Host "Not on dvr network. Switching..."
-        Set-Static -Address $ADDRESS_ON_DVR_LAN -Gateway $DVR_GATEWAY
-        $changedNetwork = $true
+        UILoop -Channels $args
     }
-    if (-not (RetryReachable -ComputerName $DVR_IP))
+    else
     {
-        Write-Host "DVR is not reachable.
-        Exiting..."
-        return
+        UILoop
     }
-    UILoop
-    if ($changedNetwork)
-    {
-        Write-Host "Restoring network settings..."
-        if ($DHCP)
-        {
-            Write-Host "Restoring DHCP..."
-            Set-Dynamic
-        }
-        else
-        {
-            Write-Host "Restoring static..."
-            Set-Static -Address $oldAddress -Gateway $oldGateway
-        }
-    }
-    #    Read-Host "Press Enter to exit..."
 }
-
-mainFunc
