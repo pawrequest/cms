@@ -1,4 +1,5 @@
-."E:\DOCS\Desktop\cms\eth.ps1"
+$ethScript = Join-Path $PSScriptRoot '\eth.ps1'
+. $ethScript
 
 
 $ADDRESS_ON_DVR_LAN = "192.168.1.127"
@@ -15,16 +16,12 @@ $OFF_CHANNELS = @(4, 10)
 $STREAM_QUALITY = 1 # 0: high quality, 1: low quality
 
 
-
-
-
-
-
 function Open-Chanel(
         [int]$Channel,
         [int]$Stream = $STREAM_QUALITY,
         [string]$Codec = "H264"
-){
+)
+{
     Write-Host "Launching channel $Channel..."
     $baseUrl = "rtsp://${RTSP_USER}:${RTSP_PASS}@192.168.1.10:554"
     $url = $baseUrl + "?codec=$Codec&channel=$Channel&stream=$Stream.sdp&real_stream--rtp-caching=100"
