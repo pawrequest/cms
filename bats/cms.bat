@@ -9,7 +9,7 @@ if %errorlevel% neq 0 (
     exit
 )
 
-powershell -Command "Start-Process cmd.exe -ArgumentList '/c, E:\DOCS\Desktop\cms\eth.bat 192.168.1.127 192.168.1.254' -Verb RunAs -Wait"
+powershell -Command "Start-Process cmd.exe -ArgumentList '/c, %~dp0\eth.bat 192.168.1.127 192.168.1.254' -Verb RunAs -Wait"
 
 
 set user=%RTSP_USER%
@@ -48,5 +48,5 @@ if /i "%userInput%"=="r" (
 ) else (
     echo Closing VLC and resetting Ethernet...
     taskkill /IM vlc.exe /F >nul 2>&1
-    powershell -Command "Start-Process cmd.exe -ArgumentList '/c, E:\DOCS\Desktop\cms\eth.bat 192.168.0.27 192.168.0.254' -Verb RunAs -Wait"
+    powershell -Command "Start-Process cmd.exe -ArgumentList '/c, %~dp0\eth.bat 192.168.0.27 192.168.0.254' -Verb RunAs -Wait"
 )

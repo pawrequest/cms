@@ -1,53 +1,52 @@
-$HOME_ADDRESS = "192.168.0.27"
-$HOME_GATEWAY = "192.168.0.254"
-$OFFICE_ADDRESS = "192.168.1.127"
-$OFFICE_GATEWAY = "192.168.1.254"
-
-$PROG_EXE = "C:\Program Files (x86)\VideoLAN\VLC\vlc.exe"
-$RTSP_USER = $env:RTSP_USER
-$RTSP_PASS = $env:RTSP_PASS
-
-$FRONT_CHANNELS = @(1, 2, 6, 8)
-$DOOR_CHANNELS = @(2, 6)
-$OFF_CHANNELS = @(4, 10)
-$DEFAULT_STREAM = 1 # 0: high quality, 1: low quality
-
-
 ."E:\DOCS\Desktop\cms\eth.ps1"
 
 
-if (-not $args)
-{
-    Write-Host "No channels provided. Defaulting to front"
-    $channels = $FRONT_CHANNELS
-}
-else
-{
-    $channels = $args
-}
+$ADDRESS_ON_DVR_LAN = "192.168.1.127"
+$DVR_GATEWAY = "192.168.1.254"
+$DVR_IP = "192.168.1.10"
 
-function Open-Chanel
-{
-    param (
-        [string]$Channel,
-        [int]$Stream = $DEFAULT_STREAM
-    )
-    $url = "rtsp://192.168.1.10:554/user=$RTSP_USER&password=$RTSP_PASS&channel=$Channel&stream=$Stream.sdp?real_stream--rtp-caching=100"
+# video stuff
+$VIDEO_PLAYER = "C:\Program Files (x86)\VideoLAN\VLC\vlc.exe"
+$RTSP_USER = $env:RTSP_USER
+$RTSP_PASS = $env:RTSP_PASS
+$FRONT_CHANNELS = @(1, 2, 6, 8)
+$DOOR_CHANNELS = @(2, 6)
+$OFF_CHANNELS = @(4, 10)
+$STREAM_QUALITY = 1 # 0: high quality, 1: low quality
+
+
+
+
+
+
+
+function Open-Chanel(
+        [int]$Channel,
+        [int]$Stream = $STREAM_QUALITY,
+        [string]$Codec = "H264"
+){
     Write-Host "Launching channel $Channel..."
-    Start-Process -FilePath $PROG_EXE -ArgumentList $url
+    $baseUrl = "rtsp://${RTSP_USER}:${RTSP_PASS}@192.168.1.10:554"
+    $url = $baseUrl + "?codec=$Codec&channel=$Channel&stream=$Stream.sdp&real_stream--rtp-caching=100"
+    Start-Process -FilePath $VIDEO_PLAYER -ArgumentList $url
 }
 
 
 function UILoop
 {
-    $StreamQuality = $DEFAULT_STREAM
+    $StreamQuality = $STREAM_QUALITY
+    $channels = $FRONT_CHANNELS
+    if ($args)
+    {
+        $channels = $args
+    }
     while ($true)
     {
         foreach ($channel in $channels)
         {
             Open-Chanel -Channel $channel -Stream $StreamQuality
         }
-        $inputted = Read-Host "[d]oors, [f]ront, [o]ffice, [r]efresh, [u]pgrade quality, or else reset Ethernet and close..."
+        $inputted = Read-Host "[d]oors, [f]ront, [o]ffice, [r]efresh, [u]pgrade quality, [y]downgrade quality, or else tidy up and close..."
         Stop-Process -Name "vlc" -Force -ErrorAction SilentlyContinue
 
         if ($inputted -ieq "r")
@@ -85,9 +84,8 @@ function UILoop
 
         else
         {
-            Write-Host "Closing VLC and resetting Ethernet..."
-            Set-Network -Address $HOME_ADDRESS -Gateway $HOME_GATEWAY -Wait $false
-            exit
+            Write-Host "Closing UI..."
+            break
         }
     }
 }
@@ -95,10 +93,40 @@ function UILoop
 
 function mainFunc
 {
-    CheckAdmin($PSCommandPath)
-    CheckSetEth -Address $OFFICE_ADDRESS -Gateway $OFFICE_GATEWAY -Wait $true
+    $changedNetwork = $false
+    $oldAddress = CurrentAddress
+    $oldGateway = CurrentGateway
+    $DHCP = IsUsingDhcp
+
+    if ($oldGateway -ne $DVR_GATEWAY)
+    {
+        CheckAdmin($PSCommandPath)
+        Write-Host "Not on dvr network. Switching..."
+        Set-Static -Address $ADDRESS_ON_DVR_LAN -Gateway $DVR_GATEWAY
+        $changedNetwork = $true
+    }
+    if (-not (RetryReachable -ComputerName $DVR_IP))
+    {
+        Write-Host "DVR is not reachable.
+        Exiting..."
+        return
+    }
     UILoop
+    if ($changedNetwork)
+    {
+        Write-Host "Restoring network settings..."
+        if ($DHCP)
+        {
+            Write-Host "Restoring DHCP..."
+            Set-Dynamic
+        }
+        else
+        {
+            Write-Host "Restoring static..."
+            Set-Static -Address $oldAddress -Gateway $oldGateway
+        }
+    }
+#    Read-Host "Press Enter to exit..."
 }
 
 mainFunc
-#exit
