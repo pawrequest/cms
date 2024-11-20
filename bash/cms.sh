@@ -55,10 +55,9 @@ UILoop() {
 
         if [[ "$inputted" == "r" ]]; then
             echo "Restarting VLC..."
-#        elif [[ "$inputted" =~ ^[0-9]+(\s+[0-9]+)*$ ]]; then
-#            # Update channels from user input (space-separated numbers)
-#            IFS=' ' read -r -a channels <<< "$inputted"
-#            echo "Channels updated to: ${channels[@]}"
+        elif [[ "$inputted" =~ ^[0-9]+(\s+[0-9]+)*$ ]]; then
+            IFS=' ' read -r -a channels <<< "$inputted"
+            echo "Channels updated to: ${channels]}"
         elif [[ "$inputted" == "u" ]]; then
             echo "Upgrading Stream Quality..."
             STREAM_QUALITY=0
