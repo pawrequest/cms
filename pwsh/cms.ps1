@@ -4,6 +4,7 @@ $script:RTSP_PASS = $env:RTSP_PASS
 $script:FRONT_CHANNELS = @(1, 2, 6, 8)
 $script:FRONT_MAIN = @(1)
 $script:DOOR_CHANNELS = @(2, 6)
+$script:BACK_CHANNELS = @(5, 7)
 $script:OFF_CHANNELS = @(4, 10)
 
 function Open-Chanel([int]$Channel, [int]$Stream = 1, [string]$Codec = "H264") {
@@ -20,7 +21,7 @@ function UILoop([array]$channels = $null) {
     if (-not $channels) { $channels = $script:FRONT_MAIN }
     while ($true) {
         foreach ($chan in $channels)
-        { Open-Chanel -Channel $chan -Stream $script:STREAM_QUALITY }
+        { Open-Chanel -Channel $chan -Stream $streamQuality }
         $inputted = Read-Host "Choose option:
         `n`tOpen Chanels [space separated nums]
         `n`tOpen Chanel List: [d]oors [f]ront
@@ -38,23 +39,27 @@ function UILoop([array]$channels = $null) {
 
         elseif ($inputted -ieq "u") {
             Write-Host "Upgrading Stream Quality..."
-            $script:STREAM_QUALITY = 0
+            $streamQuality = 0
         }
         elseif ($inputted -ieq "y") {
             Write-Host "Downgrading Stream Quality..."
-            $script:STREAM_QUALITY = 1
+            $streamQuality = 1
         }
         elseif ($inputted -ieq "f") {
             Write-Host "Switching to front channels..."
-            $channels = $FRONT_CHANNELS
+            $channels = $script:FRONT_CHANNELS
         }
         elseif ($inputted -ieq "d") {
             Write-Host "Switching to door channels..."
-            $channels = $DOOR_CHANNELS
+            $channels = $script:DOOR_CHANNELS
+        }
+        elseif ($inputted -ieq "b") {
+            Write-Host "Switching to back channels..."
+            $channels = $script:BACK_CHANNELS
         }
         elseif ($inputted -ieq "o") {
             Write-Host "Switching to office channels..."
-            $channels = $OFF_CHANNELS
+            $channels = $script:OFF_CHANNELS
         }
         else {
             Write-Host "Closing UI..."
