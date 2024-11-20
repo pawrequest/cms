@@ -5,14 +5,8 @@ $script:FRONT_CHANNELS = @(1, 2, 6, 8)
 $script:FRONT_MAIN = @(1)
 $script:DOOR_CHANNELS = @(2, 6)
 $script:OFF_CHANNELS = @(4, 10)
-$script:STREAM_QUALITY = 1 # 0: high quality, 1: low quality
 
-function Open-Chanel(
-        [int]$Channel,
-        [int]$Stream = $STREAM_QUALITY,
-        [string]$Codec = "H264"
-)
-{
+function Open-Chanel([int]$Channel, [int]$Stream = 1, [string]$Codec = "H264") {
     Write-Host "Launching channel $Channel..."
     $baseUrl = "rtsp://${RTSP_USER}:${RTSP_PASS}@192.168.1.10:554"
     $url = $baseUrl + "?codec=$Codec&channel=$Channel&stream=$Stream.sdp&real_stream--rtp-caching=100"
@@ -20,52 +14,42 @@ function Open-Chanel(
 }
 
 
-function UILoop($Channels = $script:FRONT_MAIN)
-{
-    while ($true)
-    {
-        foreach ($channel in $Channels)
-        {
-            Open-Chanel -Channel $channel -Stream $script:STREAM_QUALITY
-        }
-        $inputted = Read-Host "[d]oors, [f]ront, [o]ffice, [r]efresh, [u]pgrade quality, [y]downgrade quality, or else tidy up and close..."
+function UILoop([array]$channels = $null) {
+    $streamQuality = 1 # 0: high quality, 1: low quality
+    if (-not $channels) { $channels = $script:FRONT_MAIN }
+    while ($true) {
+        foreach ($chan in $channels)
+        { Open-Chanel -Channel $chan -Stream $script:STREAM_QUALITY }
+        $inputted = Read-Host "Choose option:
+        `n`t[d]oors [f]ront [o]ffice (change channels)
+        `n`t[r]eload viewers
+        `n`t[u]pgrade quality, [y]downgrade quality,
+        `n`t[Enter] tidy up and close`n"
         Stop-Process -Name "vlc" -Force -ErrorAction SilentlyContinue
 
-        if ($inputted -ieq "r")
-        {
-            Write-Host "Restarting VLC..."
-        }
+        if ($inputted -ieq "r") { Write-Host "Restarting VLC..." }
 
-        elseif ($inputted -ieq "u")
-        {
+        elseif ($inputted -ieq "u") {
             Write-Host "Upgrading Stream Quality..."
             $script:STREAM_QUALITY = 0
         }
-
-        elseif ($inputted -ieq "y")
-        {
+        elseif ($inputted -ieq "y") {
             Write-Host "Downgrading Stream Quality..."
             $script:STREAM_QUALITY = 1
         }
-
-        elseif ($inputted -ieq "f")
-        {
+        elseif ($inputted -ieq "f") {
             Write-Host "Switching to front channels..."
-            $Channels = $FRONT_CHANNELS
+            $channels = $FRONT_CHANNELS
         }
-        elseif ($inputted -ieq "d")
-        {
+        elseif ($inputted -ieq "d") {
             Write-Host "Switching to door channels..."
-            $Channels = $DOOR_CHANNELS
+            $channels = $DOOR_CHANNELS
         }
-        elseif ($inputted -ieq "o")
-        {
+        elseif ($inputted -ieq "o") {
             Write-Host "Switching to office channels..."
-            $Channels = $OFF_CHANNELS
+            $channels = $OFF_CHANNELS
         }
-
-        else
-        {
+        else {
             Write-Host "Closing UI..."
             break
         }
@@ -74,13 +58,4 @@ function UILoop($Channels = $script:FRONT_MAIN)
 
 
 If ((Resolve-Path -Path $MyInvocation.InvocationName).ProviderPath -eq $MyInvocation.MyCommand.Path)
-{
-    if ($args)
-    {
-        UILoop -Channels $args
-    }
-    else
-    {
-        UILoop
-    }
-}
+{ UILoop -Channels $args }
