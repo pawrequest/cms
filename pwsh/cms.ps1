@@ -14,6 +14,7 @@ function Open-Chanel([int]$Channel, [int]$Stream = 1, [string]$Codec = "H264") {
 }
 
 
+
 function UILoop([array]$channels = $null) {
     $streamQuality = 1 # 0: high quality, 1: low quality
     if (-not $channels) { $channels = $script:FRONT_MAIN }
