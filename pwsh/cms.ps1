@@ -21,13 +21,19 @@ function UILoop([array]$channels = $null) {
         foreach ($chan in $channels)
         { Open-Chanel -Channel $chan -Stream $script:STREAM_QUALITY }
         $inputted = Read-Host "Choose option:
-        `n`t[d]oors [f]ront [o]ffice (change channels)
+        `n`tOpen Chanels [space separated nums]
+        `n`tOpen Chanel List: [d]oors [f]ront
         `n`t[r]eload viewers
         `n`t[u]pgrade quality, [y]downgrade quality,
         `n`t[Enter] tidy up and close`n"
         Stop-Process -Name "vlc" -Force -ErrorAction SilentlyContinue
 
         if ($inputted -ieq "r") { Write-Host "Restarting VLC..." }
+
+        elseif ($inputted -match '^\d+(\s+\d+)*$') {
+            $channels = $inputted -split "\s+"
+            Write-Host "Channels updated to: $($channels -join ', ')"
+        }
 
         elseif ($inputted -ieq "u") {
             Write-Host "Upgrading Stream Quality..."
