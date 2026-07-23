@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import font as tkfont
 
 from .channels import StreamQuality
-from .config import CMSConfig, CMSCONFIG_1
+from .config import CMSCONFIG_1, CMSConfig
 from .player import CMSPlayer
 
 # ─── Catppuccin-inspired dark palette ────────────────────────────────────────
@@ -125,8 +125,8 @@ class CMSApp(tk.Tk):
         tk.Label(q_frame, text='Stream quality:', bg=BG, fg=TEXT, font=base_font).pack(
             side='left', padx=(0, 8)
         )
-
         self._quality_var_i = tk.IntVar(value=self.player.stream_quality.value)
+
         qual_tupes = [
             (StreamQuality.HIGH.label(), StreamQuality.HIGH.value, GREEN),
             (StreamQuality.LOW.label(), StreamQuality.LOW.value, YELLOW),
@@ -282,7 +282,8 @@ class CMSApp(tk.Tk):
 
     def _on_quality_change(self) -> None:
         """Sync radio button → player quality, then reload if streams are open."""
-        self.player.toggle_quality()
+        # self.player.toggle_quality()
+        self.player.set_quality(StreamQuality(self._quality_var_i.get()))
         if self.player.active_channels:
             self._launch(self.player.active_channels)
 

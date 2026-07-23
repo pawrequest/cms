@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import subprocess
-import sys
 import threading
 import time
 from collections.abc import Sequence
 
 from .channels import StreamQuality
-from .config import CMSConfig, CMSCONFIG_1
+from .config import CMSCONFIG_1, CMSConfig
 from .tiling import VLC_DELAY_MS
 
 
@@ -25,8 +24,8 @@ class CMSPlayer:
         player.close_all()
     """
 
-    def __init__(self, config: CMSConfig | None = None) -> None:
-        self.config: CMSConfig = config or CMSCONFIG_1
+    def __init__(self, config: CMSConfig = CMSCONFIG_1) -> None:
+        self.config: CMSConfig = config
         self.stream_quality: StreamQuality = config.default_quality
         self._active_channels: list[int] = []
         self._processes: list[subprocess.Popen] = []
@@ -65,7 +64,7 @@ class CMSPlayer:
         """Open a named channel group.
 
         Args:
-            group: One of the keys in :attr:`~cms.config.CMSConfig.channel_groups`
+            group: Name of a channel group (case-insensitive).
 
         Raises:
             KeyError: If *group* is not a known group name.
@@ -104,19 +103,9 @@ class CMSPlayer:
 
     def close_all(self) -> None:
         """Terminate all running VLC processes."""
-        self._processes.clear()
-        if sys.platform == 'win32':
-            subprocess.run(
-                ['taskkill', '/IM', 'vlc.exe', '/F'],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-        else:
-            subprocess.run(
-                ['pkill', '-f', 'vlc'],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+        for proc in self._processes:
+            if proc.poll() is None:
+                proc.terminate()
 
     def tile_windows(self, timeout: float = 5.0, *, delay_ms: float = VLC_DELAY_MS) -> None:
         """Arrange all open VLC windows in a grid.

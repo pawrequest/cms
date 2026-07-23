@@ -34,7 +34,7 @@ class CMSConfig:
     def default_group(self) -> list[int]:
         return self.channel_groups[self.default_group_name]
 
-    max_channel: Final[int] = 16
+    max_channel: int = 16
 
     # VLC
     vlc_path: str = field(
