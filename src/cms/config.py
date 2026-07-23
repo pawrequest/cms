@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
+from .channels import StreamQuality
 
 
 @dataclass
@@ -31,7 +32,8 @@ class CMSConfig:
 
     # Stream tunables
     rtp_caching: int = 100
-    default_stream: int = 1  # 0 = main / high-quality,  1 = sub / low-quality
+    default_stream: int = 0  # 0 = main / high-quality,  1 = sub / low-quality
+    default_quality: StreamQuality = StreamQuality.HIGH
     default_codec: str = "H264"
 
     # ------------------------------------------------------------------ #
@@ -54,7 +56,8 @@ class CMSConfig:
                      Falls back to :attr:`default_stream` when *None*.
             codec:   Unused in this URL scheme but kept for API consistency.
         """
-        s = self.default_stream if stream is None else stream
+        # s = self.default_stream if stream is None else stream
+        s = self.default_quality.value if stream is None else stream
         return (
             f"rtsp://{self.rtsp_host}:{self.rtsp_port}"
             f"/user={self.rtsp_user}&password={self.rtsp_pass}"

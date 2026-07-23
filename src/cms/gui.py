@@ -95,7 +95,7 @@ class CMSApp(tk.Tk):
             ).grid(row=0, column=col, padx=4, pady=7)
 
         # ── Individual channel picker ──────────────────────────────────
-        ch_frame = self._labeled_frame("Channels  (click to select, then Open Selected)")
+        ch_frame = self._labeled_frame("Channels  (click to select, then Reload)")
         ch_frame.pack(padx=14, pady=(0, 6), fill="x")
 
         for idx, ch in enumerate(range(1, MAX_CHANNEL + 1)):
@@ -113,14 +113,18 @@ class CMSApp(tk.Tk):
 
         tk.Label(q_frame, text="Stream quality:", bg=BG, fg=TEXT, font=base_font).pack(side="left", padx=(0, 8))
 
-        self._quality_var = tk.StringVar(value="LOW")
-        for label, val, color in [("High", "HIGH", GREEN), ("Low", "LOW", YELLOW)]:
+        # self._quality_var = tk.StringVar(value="qual")
+        self._quality_var_i = tk.IntVar(value=self.player.stream_quality.value)
+        qual_tupes = [(StreamQuality.HIGH.label().title(), StreamQuality.HIGH.value, GREEN), (StreamQuality.LOW.label().title(), StreamQuality.LOW.value, YELLOW)]
+        for label, val, color in qual_tupes:
             tk.Radiobutton(
-                q_frame, text=label, variable=self._quality_var, value=val,
+                q_frame, text=label, variable=self._quality_var_i, value=val,
                 command=self._on_quality_change,
                 bg=BG, fg=color, selectcolor=SURFACE,
                 activebackground=BG, font=base_font,
             ).pack(side="left", padx=4)
+
+        # q_frame.update()
 
         # ── Action buttons ─────────────────────────────────────────────
         act_frame = tk.Frame(self, bg=BG)
@@ -235,22 +239,22 @@ class CMSApp(tk.Tk):
             self._chan_btns[ch].configure(bg=ACTIVE_CH_BG, fg=ACTIVE_CH_FG)
 
     def _on_quality_change(self) -> None:
-        q = StreamQuality.HIGH if self._quality_var.get() == "HIGH" else StreamQuality.LOW
-        self.player.set_quality(q)
+        """Sync radio button → player quality, then reload if streams are open."""
+        self.player.toggle_quality()
         if self.player.active_channels:
             self._launch(self.player.active_channels)
 
     # ── Channel actions ────────────────────────────────────────────────
 
     def _launch(self, channels: list[int]) -> None:
-        """Close existing streams and open *channels*."""
+        """Close existing streams, open *channels* at current quality, then tile."""
         if not channels:
             self._set_status("No channels to open.")
             return
         self.player.close_all()
-        self.player.open_channels(channels)
+        self.player.open_and_tile_channels(channels)
         self._highlight_channels(channels)
-        self._set_status(f"Opened channels: {channels}")
+        self._set_status(f"Opened channels: {channels} — tiling…")
 
     def _open_group(self, group: str) -> None:
         self._launch(CHANNEL_GROUPS[group])
@@ -297,3 +301,7 @@ def run_gui(config: CMSConfig | None = None) -> None:
 
     app = CMSApp(config)
     app.mainloop()
+
+
+if __name__ == "__main__":
+    run_gui()

@@ -63,6 +63,7 @@ def _print_status(player: CMSPlayer) -> None:
         ("[a]",      "all channels"),
         ("[1 2 …]",  "open specific channel numbers (space or comma separated)"),
         ("[r]",      "reload — close & reopen current channels"),
+        # ("[w]",      "tile VLC windows into a grid"),
         ("[u]",      "upgrade to HIGH quality stream  (reloads)"),
         ("[y]",      "downgrade to LOW  quality stream (reloads)"),
         ("[t]",      "toggle quality                  (reloads)"),
@@ -101,6 +102,12 @@ def ui_loop(player: CMSPlayer) -> None:
             console.print("[blue]Reloading…[/blue]")
             player.reload()
 
+        # elif cmd == "w":
+        #     console.print("[blue]Tiling windows…[/blue]")
+        #     ok = player.tile_windows()
+        #     if not ok:
+        #         console.print("[yellow]No VLC windows found to tile.[/yellow]")
+
         elif cmd in ("u", "y", "t"):
             if cmd == "u":
                 player.upgrade_quality()
@@ -124,7 +131,7 @@ def ui_loop(player: CMSPlayer) -> None:
             if nums:
                 console.print(f"[blue]Opening channels: {nums}[/blue]")
                 player.close_all()
-                player.open_channels(nums)
+                player.open_and_tile_channels(nums)
             else:
                 console.print(
                     f"[red]Unknown command '{raw}'. "
@@ -152,7 +159,7 @@ def ui_loop(player: CMSPlayer) -> None:
 @click.option(
     "--quality", "-q",
     type=click.Choice(["high", "low"], case_sensitive=False),
-    default="low",
+    default="high",
     show_default=True,
     help="Initial stream quality.",
 )
@@ -192,12 +199,13 @@ def main(group, channels, quality, host, gui) -> None:
         if not nums:
             console.print("[red]No valid channel numbers in --channels.[/red]")
             sys.exit(1)
-        player.open_channels(nums)
+        player.open_and_tile_channels(nums)
     elif group:
         player.open_group(group)
     else:
         player.open_group(DEFAULT_GROUP)
 
+    console.print("[blue]Tiling…[/blue]")
     ui_loop(player)
 
 
