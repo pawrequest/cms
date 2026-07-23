@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from enum import IntEnum
-from typing import Final
 
 
 class StreamQuality(IntEnum):
@@ -24,13 +23,4 @@ class StreamQuality(IntEnum):
 
 
 # Named channel groups ————————————————————————————————————————————————————
-CHANNEL_GROUPS: Final[dict[str, list[int]]] = {
-    'doors': [2, 6],
-    'front': [1, 2, 6, 8],
-    'main': [1],
-    'office': [4, 10],
-    'all': list(range(1, 17)),
-}
 
-DEFAULT_GROUP: Final[str] = 'doors'
-MAX_CHANNEL: Final[int] = 16

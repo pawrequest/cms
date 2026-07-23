@@ -11,8 +11,8 @@ Public API::
     player.close_all()
 """
 
-from .config import CMSConfig
-from .channels import CHANNEL_GROUPS, StreamQuality
+from .config import CMSConfig, CHANNEL_GROUPS
+from .channels import StreamQuality
 from .player import CMSPlayer
 
 __all__ = ['CMSConfig', 'CMSPlayer', 'CHANNEL_GROUPS', 'StreamQuality']

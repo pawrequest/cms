@@ -10,8 +10,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from .channels import CHANNEL_GROUPS, DEFAULT_GROUP, StreamQuality
-from .config import CMSConfig
+from .channels import StreamQuality
+from .config import CMSConfig, DEFAULT_GROUP, CHANNEL_GROUPS
 from .player import CMSPlayer
 
 console = Console()
@@ -37,10 +37,7 @@ GROUP_SHORTCUTS: dict[str, str] = {
 def _parse_channels(text: str) -> list[int]:
     """Parse a space- or comma-separated string of integers into a channel list."""
     tokens = text.replace(',', ' ').split()
-    result = []
-    for t in tokens:
-        if t.isdigit():
-            result.append(int(t))
+    result = [int(t) for t in tokens if t.isdigit()]
     return result
 
 
@@ -212,10 +209,7 @@ def main(group, channels, quality, host, gui) -> None:
             console.print('[red]No valid channel numbers in --channels.[/red]')
             sys.exit(1)
         player.open_and_tile_channels(nums)
-    elif group:
-        player.open_group(group)
-    else:
-        player.open_group(DEFAULT_GROUP)
+    player.open_group(group or DEFAULT_GROUP)
 
     console.print('[blue]Tiling…[/blue]')
     ui_loop(player)

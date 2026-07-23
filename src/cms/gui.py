@@ -5,8 +5,8 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import font as tkfont
 
-from .channels import CHANNEL_GROUPS, MAX_CHANNEL, StreamQuality
-from .config import CMSConfig
+from .channels import StreamQuality
+from .config import CMSConfig, MAX_CHANNEL, CHANNEL_GROUPS
 from .player import CMSPlayer
 
 # ─── Catppuccin-inspired dark palette ────────────────────────────────────────
