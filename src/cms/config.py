@@ -49,9 +49,9 @@ class CMSConfig:
 
     # ------------------------------------------------------------------ #
     def build_url(
-            self,
-            channel: int,
-            quality: StreamQuality | None = None,
+        self,
+        channel: int,
+        quality: StreamQuality | None = None,
     ) -> str:
         """Return a URL for *channel*.
 
@@ -78,7 +78,6 @@ def cms_config_1() -> CMSConfig:
             'all': list(range(1, 17)),
         },
         default_group_name='doors',
-
         rtsp_user=os.getenv('RTSP_USER'),
         rtsp_pass=os.getenv('RTSP_PASS'),
         rtsp_host='192.168.1.8',

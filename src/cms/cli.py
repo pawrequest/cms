@@ -190,7 +190,9 @@ def main(channels, quality, host, gui) -> None:
 
     config = cms_config_1()
     if quality:
-        config.default_quality = StreamQuality.LOW if quality.lower().startswith('l') else StreamQuality.HIGH
+        config.default_quality = (
+            StreamQuality.LOW if quality.lower().startswith('l') else StreamQuality.HIGH
+        )
     if host:
         config.rtsp_host = host
 
