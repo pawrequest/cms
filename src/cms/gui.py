@@ -140,7 +140,7 @@ class CMSApp(tk.Tk):
         # ── Settings (collapsible) ─────────────────────────────────────
         self._build_settings()
 
-    def _labeled_frame(self, label: str) -> tk.Frame:
+    def _labeled_frame(self, label: str) -> tk.LabelFrame:
         outer = tk.LabelFrame(
             self, text=f"  {label}  ",
             bg=BG, fg=BLUE,
@@ -277,7 +277,23 @@ class CMSApp(tk.Tk):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def run_gui(config: CMSConfig | None = None) -> None:
-    """Launch the CMS GUI (blocks until the window is closed)."""
+    """Launch the CMS GUI (blocks until the window is closed).
+
+    When the interpreter lives inside a venv the Tcl/Tk shared libraries are
+    located under the *base* Python prefix, not the venv prefix.  We set
+    TCL_LIBRARY / TK_LIBRARY from ``sys.base_prefix`` before Tk() is
+    constructed so the correct ``init.tcl`` is found automatically.
+    """
+    import os
+    import sys
+
+    base = sys.base_prefix
+    for env_var, subdir in [("TCL_LIBRARY", "tcl8.6"), ("TK_LIBRARY", "tk8.6")]:
+        if env_var not in os.environ:
+            candidate = os.path.join(base, "tcl", subdir)
+            if os.path.isdir(candidate):
+                os.environ[env_var] = candidate
+
     app = CMSApp(config)
     app.mainloop()
 
