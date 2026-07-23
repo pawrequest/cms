@@ -1,4 +1,5 @@
 """Core player: manages VLC processes and channel state."""
+
 from __future__ import annotations
 
 import subprocess
@@ -106,15 +107,15 @@ class CMSPlayer:
     def close_all(self) -> None:
         """Terminate all running VLC processes."""
         self._processes.clear()
-        if sys.platform == "win32":
+        if sys.platform == 'win32':
             subprocess.run(
-                ["taskkill", "/IM", "vlc.exe", "/F"],
+                ['taskkill', '/IM', 'vlc.exe', '/F'],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
         else:
             subprocess.run(
-                ["pkill", "-f", "vlc"],
+                ['pkill', '-f', 'vlc'],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
@@ -127,8 +128,11 @@ class CMSPlayer:
         success.  No-op on non-Windows platforms.
         """
         from .tiling import tile_vlc_windows
+
         if delay_ms:
             time.sleep(delay_ms / 1000)
         pids = {p.pid for p in self._processes if p.poll() is None}
 
-        threading.Thread(target=lambda: tile_vlc_windows(pids, timeout=timeout), daemon=True).start()
+        threading.Thread(
+            target=lambda: tile_vlc_windows(pids, timeout=timeout), daemon=True
+        ).start()

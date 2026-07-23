@@ -1,4 +1,5 @@
 """Channel groups and stream quality definitions."""
+
 from __future__ import annotations
 
 from enum import IntEnum
@@ -16,21 +17,20 @@ class StreamQuality(IntEnum):
     LOW = 1
 
     def label(self) -> str:
-        return "HIGH" if self == StreamQuality.HIGH else "LOW"
+        return 'HIGH' if self == StreamQuality.HIGH else 'LOW'
 
-    def toggled(self) -> "StreamQuality":
+    def toggled(self) -> 'StreamQuality':
         return StreamQuality.LOW if self == StreamQuality.HIGH else StreamQuality.HIGH
 
 
 # Named channel groups ————————————————————————————————————————————————————
 CHANNEL_GROUPS: Final[dict[str, list[int]]] = {
-    "doors":  [2, 6],
-    "front":  [1, 2, 6, 8],
-    "main":   [1],
-    "office": [4, 10],
-    "all":    list(range(1, 17)),
+    'doors': [2, 6],
+    'front': [1, 2, 6, 8],
+    'main': [1],
+    'office': [4, 10],
+    'all': list(range(1, 17)),
 }
 
-DEFAULT_GROUP: Final[str] = "doors"
+DEFAULT_GROUP: Final[str] = 'doors'
 MAX_CHANNEL: Final[int] = 16
-

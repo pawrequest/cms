@@ -1,4 +1,5 @@
 """Tile VLC windows into a grid using the Win32 API (Windows only)."""
+
 from __future__ import annotations
 
 import ctypes
@@ -23,7 +24,7 @@ def tile_vlc_windows(pids: set[int], timeout: float = 5.0) -> bool:
     Polls until every expected window is visible or *timeout* seconds elapse.
     Returns True if at least one window was tiled.
     """
-    if sys.platform != "win32" or not pids:
+    if sys.platform != 'win32' or not pids:
         return False
 
     user32 = ctypes.windll.user32

@@ -1,4 +1,5 @@
 """Runtime configuration, resolved from environment variables with sensible defaults."""
+
 from __future__ import annotations
 
 import os
@@ -18,15 +19,15 @@ class CMSConfig:
     """
 
     # RTSP credentials / address
-    rtsp_user: str = field(default_factory=lambda: os.getenv("RTSP_USER", ""))
-    rtsp_pass: str = field(default_factory=lambda: os.getenv("RTSP_PASS", ""))
-    rtsp_host: str = field(default_factory=lambda: os.getenv("RTSP_HOST", "192.168.1.8"))
+    rtsp_user: str = field(default_factory=lambda: os.getenv('RTSP_USER', ''))
+    rtsp_pass: str = field(default_factory=lambda: os.getenv('RTSP_PASS', ''))
+    rtsp_host: str = field(default_factory=lambda: os.getenv('RTSP_HOST', '192.168.1.8'))
     rtsp_port: int = 554
 
     # VLC
     vlc_path: str = field(
         default_factory=lambda: os.getenv(
-            "VLC_PATH", r"C:\Program Files (x86)\VideoLAN\VLC\vlc.exe"
+            'VLC_PATH', r'C:\Program Files (x86)\VideoLAN\VLC\vlc.exe'
         )
     )
 
@@ -34,7 +35,7 @@ class CMSConfig:
     rtp_caching: int = 100
     default_stream: int = 0  # 0 = main / high-quality,  1 = sub / low-quality
     default_quality: StreamQuality = StreamQuality.HIGH
-    default_codec: str = "H264"
+    default_codec: str = 'H264'
 
     # ------------------------------------------------------------------ #
     def build_url(
@@ -59,9 +60,8 @@ class CMSConfig:
         # s = self.default_stream if stream is None else stream
         s = self.default_quality.value if stream is None else stream
         return (
-            f"rtsp://{self.rtsp_host}:{self.rtsp_port}"
-            f"/user={self.rtsp_user}&password={self.rtsp_pass}"
-            f"&channel={channel}&stream={s}.sdp"
-            f"?real_stream--rtp-caching={self.rtp_caching}"
+            f'rtsp://{self.rtsp_host}:{self.rtsp_port}'
+            f'/user={self.rtsp_user}&password={self.rtsp_pass}'
+            f'&channel={channel}&stream={s}.sdp'
+            f'?real_stream--rtp-caching={self.rtp_caching}'
         )
-
