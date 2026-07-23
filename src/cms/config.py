@@ -35,7 +35,6 @@ class CMSConfig:
 
     # Stream tunables
     rtp_caching: int = 100
-    default_stream: int = 0  # 0 = main / high-quality,  1 = sub / low-quality
     default_quality: StreamQuality = StreamQuality.HIGH
     default_codec: str = 'H264'
 
