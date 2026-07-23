@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from typing import Final
 
 from .channels import StreamQuality
 
@@ -69,18 +68,19 @@ class CMSConfig:
         )
 
 
-CMSCONFIG_1 = CMSConfig(
-    channel_groups={
-        'doors': [2, 6],
-        'front': [1, 2, 6, 8],
-        'main': [1],
-        'office': [4, 10],
-        'all': list(range(1, 17)),
-    },
-    default_group_name='doors',
+def cms_config_1() -> CMSConfig:
+    return CMSConfig(
+        channel_groups={
+            'doors': [2, 6],
+            'front': [1, 2, 6, 8],
+            'main': [1],
+            'office': [4, 10],
+            'all': list(range(1, 17)),
+        },
+        default_group_name='doors',
 
-    rtsp_user=os.getenv('RTSP_USER'),
-    rtsp_pass=os.getenv('RTSP_PASS'),
-    rtsp_host='192.168.1.8',
-    rtsp_port=554,
-)
+        rtsp_user=os.getenv('RTSP_USER'),
+        rtsp_pass=os.getenv('RTSP_PASS'),
+        rtsp_host='192.168.1.8',
+        rtsp_port=554,
+    )

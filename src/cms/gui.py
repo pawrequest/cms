@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import font as tkfont
 
 from .channels import StreamQuality
-from .config import CMSCONFIG_1, CMSConfig
+from .config import CMSConfig, cms_config_1
 from .player import CMSPlayer
 
 # ─── Catppuccin-inspired dark palette ────────────────────────────────────────
@@ -48,7 +48,7 @@ class CMSApp(tk.Tk):
         self.configure(bg=BG)
         self.resizable(False, False)
 
-        self.player = CMSPlayer(config or CMSCONFIG_1)
+        self.player = CMSPlayer(config)
         self._selected: set[int] = set()
         self._chan_btns: dict[int, tk.Button] = {}
 
@@ -343,6 +343,7 @@ def run_gui(config: CMSConfig | None = None) -> None:
             if os.path.isdir(candidate):
                 os.environ[env_var] = candidate
 
+    config = config or cms_config_1()
     app = CMSApp(config)
     app.mainloop()
 

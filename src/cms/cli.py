@@ -11,7 +11,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from .channels import StreamQuality
-from .config import CMSConfig, CMSCONFIG_1
+from .config import cms_config_1
 from .player import CMSPlayer
 
 console = Console()
@@ -188,7 +188,7 @@ def main(channels, quality, host, gui) -> None:
         run_gui()
         return
 
-    config = CMSCONFIG_1
+    config = cms_config_1()
     if host:
         config.rtsp_host = host
 

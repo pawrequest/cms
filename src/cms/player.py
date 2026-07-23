@@ -8,7 +8,7 @@ import time
 from collections.abc import Sequence
 
 from .channels import StreamQuality
-from .config import CMSCONFIG_1, CMSConfig
+from .config import CMSConfig
 from .tiling import VLC_DELAY_MS
 
 
@@ -24,8 +24,8 @@ class CMSPlayer:
         player.close_all()
     """
 
-    def __init__(self, config: CMSConfig = CMSCONFIG_1) -> None:
-        self.config: CMSConfig = config
+    def __init__(self, config: CMSConfig = None) -> None:
+        self.config: CMSConfig = config or CMSConfig()
         self.stream_quality: StreamQuality = config.default_quality
         self._active_channels: list[int] = []
         self._processes: list[subprocess.Popen] = []
