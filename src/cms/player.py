@@ -48,7 +48,7 @@ class CMSPlayer:
 
     def open_channel(self, channel: int) -> None:
         """Launch a single VLC instance for *channel*."""
-        url = self.config.build_url(channel, stream=self.stream_quality.value)
+        url = self.config.build_url(channel, quality=self.stream_quality)
         proc = subprocess.Popen([self.config.vlc_path, url])
         self._processes.append(proc)
 

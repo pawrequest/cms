@@ -16,11 +16,7 @@ class StreamQuality(IntEnum):
     LOW = 1
 
     def label(self) -> str:
-        return 'HIGH' if self == StreamQuality.HIGH else 'LOW'
+        return self.name.title()
 
     def toggled(self) -> 'StreamQuality':
         return StreamQuality.LOW if self == StreamQuality.HIGH else StreamQuality.HIGH
-
-
-# Named channel groups ————————————————————————————————————————————————————
-

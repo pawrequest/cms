@@ -42,7 +42,7 @@ class CMSConfig:
     def build_url(
         self,
         channel: int,
-        stream: int | None = None,
+        quality: StreamQuality | None = None,
         codec: str | None = None,
     ) -> str:
         """Return a fully-qualified RTSP URL for *channel*.
@@ -54,12 +54,10 @@ class CMSConfig:
 
         Args:
             channel: Camera channel number (1-based).
-            stream:  0 = main (high quality), 1 = sub (low quality).
-                     Falls back to :attr:`default_stream` when *None*.
+            quality: Stream quality. Falls back to :attr:`default_quality` when *None*.
             codec:   Unused in this URL scheme but kept for API consistency.
         """
-        # s = self.default_stream if stream is None else stream
-        s = self.default_quality.value if stream is None else stream
+        s = self.default_quality.value if quality is None else quality.value
         return (
             f'rtsp://{self.rtsp_host}:{self.rtsp_port}'
             f'/user={self.rtsp_user}&password={self.rtsp_pass}'

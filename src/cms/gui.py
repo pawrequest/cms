@@ -129,8 +129,8 @@ class CMSApp(tk.Tk):
         # self._quality_var = tk.StringVar(value="qual")
         self._quality_var_i = tk.IntVar(value=self.player.stream_quality.value)
         qual_tupes = [
-            (StreamQuality.HIGH.label().title(), StreamQuality.HIGH.value, GREEN),
-            (StreamQuality.LOW.label().title(), StreamQuality.LOW.value, YELLOW),
+            (StreamQuality.HIGH.label(), StreamQuality.HIGH.value, GREEN),
+            (StreamQuality.LOW.label(), StreamQuality.LOW.value, YELLOW),
         ]
         for label, val, color in qual_tupes:
             tk.Radiobutton(
