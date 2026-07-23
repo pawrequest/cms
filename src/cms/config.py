@@ -21,10 +21,21 @@ class CMSConfig:
     """
 
     # RTSP credentials / address
-    rtsp_user: str = field(default_factory=lambda: os.getenv('RTSP_USER', ''))
-    rtsp_pass: str = field(default_factory=lambda: os.getenv('RTSP_PASS', ''))
-    rtsp_host: str = field(default_factory=lambda: os.getenv('RTSP_HOST', '192.168.1.8'))
+    rtsp_user: str = field(default_factory=lambda: os.getenv('RTSP_USER'))
+    rtsp_pass: str = field(default_factory=lambda: os.getenv('RTSP_PASS'))
+    rtsp_host: str = field(default_factory=lambda: os.getenv('RTSP_HOST'))
     rtsp_port: int = 554
+
+    # Channels
+
+    channel_groups: dict[str, list[int]] = field(default_factory=dict[str, list[int]])
+    default_group_name: str = ''
+
+    @property
+    def default_group(self) -> list[int]:
+        return self.channel_groups[self.default_group_name]
+
+    max_channel: Final[int] = 16
 
     # VLC
     vlc_path: str = field(
@@ -40,10 +51,10 @@ class CMSConfig:
 
     # ------------------------------------------------------------------ #
     def build_url(
-        self,
-        channel: int,
-        quality: StreamQuality | None = None,
-        codec: str | None = None,
+            self,
+            channel: int,
+            quality: StreamQuality | None = None,
+            codec: str | None = None,
     ) -> str:
         """Return a fully-qualified RTSP URL for *channel*.
 
@@ -66,12 +77,18 @@ class CMSConfig:
         )
 
 
-CHANNEL_GROUPS: Final[dict[str, list[int]]] = {
-    'doors': [2, 6],
-    'front': [1, 2, 6, 8],
-    'main': [1],
-    'office': [4, 10],
-    'all': list(range(1, 17)),
-}
-DEFAULT_GROUP: Final[str] = 'doors'
-MAX_CHANNEL: Final[int] = 16
+CMSCONFIG_1 = CMSConfig(
+    channel_groups={
+        'doors': [2, 6],
+        'front': [1, 2, 6, 8],
+        'main': [1],
+        'office': [4, 10],
+        'all': list(range(1, 17)),
+    },
+    default_group_name='doors',
+
+    rtsp_user=os.getenv('RTSP_USER'),
+    rtsp_pass=os.getenv('RTSP_PASS'),
+    rtsp_host='192.168.1.8',
+    rtsp_port=554,
+)

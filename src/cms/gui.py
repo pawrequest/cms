@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import font as tkfont
 
 from .channels import StreamQuality
-from .config import CMSConfig, MAX_CHANNEL, CHANNEL_GROUPS
+from .config import CMSConfig, CMSCONFIG_1
 from .player import CMSPlayer
 
 # ─── Catppuccin-inspired dark palette ────────────────────────────────────────
@@ -48,7 +48,7 @@ class CMSApp(tk.Tk):
         self.configure(bg=BG)
         self.resizable(False, False)
 
-        self.player = CMSPlayer(config or CMSConfig())
+        self.player = CMSPlayer(config or CMSCONFIG_1)
         self._selected: set[int] = set()
         self._chan_btns: dict[int, tk.Button] = {}
 
@@ -107,7 +107,7 @@ class CMSApp(tk.Tk):
         ch_frame = self._labeled_frame('Channels  (click to select, then Reload)')
         ch_frame.pack(padx=14, pady=(0, 6), fill='x')
 
-        for idx, ch in enumerate(range(1, MAX_CHANNEL + 1)):
+        for idx, ch in enumerate(range(1, self.player.config.max_channel + 1)):
             btn = _btn(
                 ch_frame,
                 str(ch),
@@ -126,7 +126,6 @@ class CMSApp(tk.Tk):
             side='left', padx=(0, 8)
         )
 
-        # self._quality_var = tk.StringVar(value="qual")
         self._quality_var_i = tk.IntVar(value=self.player.stream_quality.value)
         qual_tupes = [
             (StreamQuality.HIGH.label(), StreamQuality.HIGH.value, GREEN),
@@ -145,8 +144,6 @@ class CMSApp(tk.Tk):
                 activebackground=BG,
                 font=base_font,
             ).pack(side='left', padx=4)
-
-        # q_frame.update()
 
         # ── Action buttons ─────────────────────────────────────────────
         act_frame = tk.Frame(self, bg=BG)
@@ -302,7 +299,7 @@ class CMSApp(tk.Tk):
         self._set_status(f'Opened channels: {channels} — tiling…')
 
     def _open_group(self, group: str) -> None:
-        self._launch(CHANNEL_GROUPS[group])
+        self._launch(self.player.config.channel_groups[group])
 
     def _open_selected(self) -> None:
         if not self._selected:

@@ -11,7 +11,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from .channels import StreamQuality
-from .config import CMSConfig, DEFAULT_GROUP, CHANNEL_GROUPS
+from .config import CMSConfig, CMSCONFIG_1
 from .player import CMSPlayer
 
 console = Console()
@@ -148,13 +148,6 @@ def ui_loop(player: CMSPlayer) -> None:
 
 @click.command(context_settings={'help_option_names': ['-h', '--help']})
 @click.option(
-    '--group',
-    '-g',
-    type=click.Choice(list(CHANNEL_GROUPS.keys()), case_sensitive=False),
-    default=None,
-    help='Initial channel group.',
-)
-@click.option(
     '--channels',
     '-c',
     default=None,
@@ -174,7 +167,7 @@ def ui_loop(player: CMSPlayer) -> None:
 )
 @click.option('--gui', is_flag=True, default=False, help='Launch the graphical interface instead.')
 @click.version_option(package_name='cms')
-def main(group, channels, quality, host, gui) -> None:
+def main(channels, quality, host, gui) -> None:
     """CMS — Camera Management System.
 
     Open RTSP camera feeds in VLC from the terminal or a simple GUI.
@@ -185,7 +178,6 @@ def main(group, channels, quality, host, gui) -> None:
     \b
     Examples:
       cms                         # start with default group (doors), interactive UI
-      cms --group front           # open front channels immediately
       cms --channels 1,4,8        # open specific cameras
       cms --quality high          # start in high-quality mode
       cms --gui                   # launch the graphical interface
@@ -196,7 +188,7 @@ def main(group, channels, quality, host, gui) -> None:
         run_gui()
         return
 
-    config = CMSConfig()
+    config = CMSCONFIG_1
     if host:
         config.rtsp_host = host
 
@@ -209,7 +201,6 @@ def main(group, channels, quality, host, gui) -> None:
             console.print('[red]No valid channel numbers in --channels.[/red]')
             sys.exit(1)
         player.open_and_tile_channels(nums)
-    player.open_group(group or DEFAULT_GROUP)
 
     console.print('[blue]Tiling…[/blue]')
     ui_loop(player)

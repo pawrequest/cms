@@ -9,7 +9,7 @@ import time
 from collections.abc import Sequence
 
 from .channels import StreamQuality
-from .config import CMSConfig, DEFAULT_GROUP, CHANNEL_GROUPS
+from .config import CMSConfig, CMSCONFIG_1
 from .tiling import VLC_DELAY_MS
 
 
@@ -26,12 +26,12 @@ class CMSPlayer:
     """
 
     def __init__(self, config: CMSConfig | None = None) -> None:
-        self.config: CMSConfig = config or CMSConfig()
+        self.config: CMSConfig = config or CMSCONFIG_1
         self.stream_quality: StreamQuality = config.default_quality
         self._active_channels: list[int] = []
         self._processes: list[subprocess.Popen] = []
 
-        self.open_group(DEFAULT_GROUP)
+        self.open_group(self.config.default_group_name)
 
     # ------------------------------------------------------------------ #
     # Read-only state
@@ -65,13 +65,12 @@ class CMSPlayer:
         """Open a named channel group.
 
         Args:
-            group: One of the keys in :data:`~cms.channels.CHANNEL_GROUPS`
-                   (``"doors"``, ``"front"``, ``"office"``, ``"main"``, ``"all"``).
+            group: One of the keys in :attr:`~cms.config.CMSConfig.channel_groups`
 
         Raises:
             KeyError: If *group* is not a known group name.
         """
-        channels = CHANNEL_GROUPS[group.lower()]
+        channels = self.config.channel_groups[group.lower()]
         self.open_and_tile_channels(channels)
 
     def reload(self) -> None:
