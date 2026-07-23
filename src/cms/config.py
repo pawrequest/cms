@@ -19,7 +19,7 @@ class CMSConfig:
     # RTSP credentials / address
     rtsp_user: str = field(default_factory=lambda: os.getenv("RTSP_USER", ""))
     rtsp_pass: str = field(default_factory=lambda: os.getenv("RTSP_PASS", ""))
-    rtsp_host: str = field(default_factory=lambda: os.getenv("RTSP_HOST", "192.168.1.10"))
+    rtsp_host: str = field(default_factory=lambda: os.getenv("RTSP_HOST", "192.168.1.8"))
     rtsp_port: int = 554
 
     # VLC
