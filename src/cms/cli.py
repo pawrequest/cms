@@ -189,11 +189,12 @@ def main(channels, quality, host, gui) -> None:
         return
 
     config = cms_config_1()
+    if quality:
+        config.default_quality = StreamQuality.LOW if quality.lower().startswith('l') else StreamQuality.HIGH
     if host:
         config.rtsp_host = host
 
     player = CMSPlayer(config)
-    player.stream_quality = StreamQuality.HIGH if quality.lower() == 'high' else StreamQuality.LOW
 
     if channels:
         nums = _parse_channels(channels)
@@ -201,6 +202,6 @@ def main(channels, quality, host, gui) -> None:
             console.print('[red]No valid channel numbers in --channels.[/red]')
             sys.exit(1)
         player.open_and_tile_channels(nums)
+        console.print('[blue]Tiling…[/blue]')
 
-    console.print('[blue]Tiling…[/blue]')
     ui_loop(player)

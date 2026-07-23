@@ -25,7 +25,8 @@ class CMSPlayer:
     """
 
     def __init__(self, config: CMSConfig = None) -> None:
-        self.config: CMSConfig = config or CMSConfig()
+        config = config or CMSConfig()
+        self.config = config
         self.stream_quality: StreamQuality = config.default_quality
         self._active_channels: list[int] = []
         self._processes: list[subprocess.Popen] = []
@@ -106,6 +107,7 @@ class CMSPlayer:
         for proc in self._processes:
             if proc.poll() is None:
                 proc.terminate()
+        self._processes.clear()
 
     def tile_windows(self, timeout: float = 5.0, *, delay_ms: float = VLC_DELAY_MS) -> None:
         """Arrange all open VLC windows in a grid.

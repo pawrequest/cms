@@ -51,6 +51,7 @@ class CMSApp(tk.Tk):
         self.player = CMSPlayer(config)
         self._selected: set[int] = set()
         self._chan_btns: dict[int, tk.Button] = {}
+        self._quality_var_i = tk.IntVar(value=self.player.stream_quality.value)
 
         self._build_ui()
         self.protocol('WM_DELETE_WINDOW', self._on_close)
@@ -125,7 +126,6 @@ class CMSApp(tk.Tk):
         tk.Label(q_frame, text='Stream quality:', bg=BG, fg=TEXT, font=base_font).pack(
             side='left', padx=(0, 8)
         )
-        self._quality_var_i = tk.IntVar(value=self.player.stream_quality.value)
 
         qual_tupes = [
             (StreamQuality.HIGH.label(), StreamQuality.HIGH.value, GREEN),
