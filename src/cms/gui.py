@@ -1,7 +1,6 @@
 """Stage-2 GUI — lightweight Tkinter interface for CMS."""
 from __future__ import annotations
 
-import threading
 import tkinter as tk
 from tkinter import font as tkfont
 
@@ -10,16 +9,16 @@ from .config import CMSConfig
 from .player import CMSPlayer
 
 # ─── Catppuccin-inspired dark palette ────────────────────────────────────────
-BG      = "#1e1e2e"
+BG = "#1e1e2e"
 SURFACE = "#313244"
 OVERLAY = "#45475a"
-TEXT    = "#cdd6f4"
+TEXT = "#cdd6f4"
 SUBTEXT = "#a6adc8"
-BLUE    = "#89b4fa"
-GREEN   = "#a6e3a1"
-YELLOW  = "#f9e2af"
-RED     = "#f38ba8"
-MAUVE   = "#cba6f7"
+BLUE = "#89b4fa"
+GREEN = "#a6e3a1"
+YELLOW = "#f9e2af"
+RED = "#f38ba8"
+MAUVE = "#cba6f7"
 ACTIVE_CH_BG = "#89b4fa"
 ACTIVE_CH_FG = "#1e1e2e"
 
@@ -82,11 +81,11 @@ class CMSApp(tk.Tk):
         grp_frame.pack(padx=14, pady=(0, 6), fill="x")
 
         groups = [
-            ("Doors",  "doors"),
-            ("Front",  "front"),
-            ("Main",   "main"),
+            ("Doors", "doors"),
+            ("Front", "front"),
+            ("Main", "main"),
             ("Office", "office"),
-            ("All",    "all"),
+            ("All", "all"),
         ]
         for col, (label, key) in enumerate(groups):
             _btn(
@@ -128,9 +127,8 @@ class CMSApp(tk.Tk):
         act_frame.pack(pady=(4, 14))
 
         actions = [
-            ("▶  Open Selected", self._open_selected,  GREEN),
-            ("⟳  Reload",        self._reload,          BLUE),
-            ("✕  Close All",     self._close_all,       RED),
+            ("▶  Reload", self._open_selected, GREEN),
+            ("✕  Close All", self._close_all, RED),
         ]
         for text, cmd, color in actions:
             _btn(act_frame, text, command=cmd, fg=color, font=bold_font, width=16).pack(
@@ -239,31 +237,34 @@ class CMSApp(tk.Tk):
     def _on_quality_change(self) -> None:
         q = StreamQuality.HIGH if self._quality_var.get() == "HIGH" else StreamQuality.LOW
         self.player.set_quality(q)
+        if self.player.active_channels:
+            self._launch(self.player.active_channels)
 
     # ── Channel actions ────────────────────────────────────────────────
 
-    def _open_group(self, group: str) -> None:
-        channels = CHANNEL_GROUPS[group]
-        self._highlight_channels(channels)
-        self._on_quality_change()
+    def _launch(self, channels: list[int]) -> None:
+        """Close existing streams and open *channels*."""
+        if not channels:
+            self._set_status("No channels to open.")
+            return
         self.player.close_all()
-        threading.Thread(target=self.player.open_channels, args=(channels,), daemon=True).start()
-        self._set_status(f"Group '{group}' — channels {channels}")
+        self.player.open_channels(channels)
+        self._highlight_channels(channels)
+        self._set_status(f"Opened channels: {channels}")
+
+    def _open_group(self, group: str) -> None:
+        self._launch(CHANNEL_GROUPS[group])
 
     def _open_selected(self) -> None:
         if not self._selected:
             self._set_status("No channels selected — click channel numbers first.")
             return
-        channels = sorted(self._selected)
-        self._on_quality_change()
-        self.player.close_all()
-        threading.Thread(target=self.player.open_channels, args=(channels,), daemon=True).start()
-        self._set_status(f"Opened channels: {channels}")
+        self._launch(sorted(self._selected))
 
     def _reload(self) -> None:
-        self._on_quality_change()
-        self._set_status("Reloading…")
-        threading.Thread(target=self.player.reload, daemon=True).start()
+        """Re-open whatever channels are currently active (or selected)."""
+        active = self.player.active_channels or sorted(self._selected)
+        self._launch(active)
 
     def _close_all(self) -> None:
         self.player.close_all()
@@ -296,6 +297,3 @@ def run_gui(config: CMSConfig | None = None) -> None:
 
     app = CMSApp(config)
     app.mainloop()
-
-
-
