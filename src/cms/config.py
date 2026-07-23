@@ -27,7 +27,6 @@ class CMSConfig:
     rtsp_port: int = 554
 
     # Channels
-
     channel_groups: dict[str, list[int]] = field(default_factory=dict[str, list[int]])
     default_group_name: str = ''
 
@@ -44,7 +43,7 @@ class CMSConfig:
         )
     )
 
-    # Stream tunables
+    # Stream tuning
     rtp_caching: int = 100
     default_quality: StreamQuality = StreamQuality.HIGH
     default_codec: str = 'H264'
@@ -54,19 +53,12 @@ class CMSConfig:
             self,
             channel: int,
             quality: StreamQuality | None = None,
-            codec: str | None = None,
     ) -> str:
-        """Return a fully-qualified RTSP URL for *channel*.
-
-        Uses the DVR/NVR proprietary query-string credential format
-        (``/user=…&password=…&channel=…``) that matches the original bat
-        script.  Embedding credentials in the ``user:pass@host`` part of the
-        URL causes VLC to trigger an RTSP digest-auth dialog instead.
+        """Return a URL for *channel*.
 
         Args:
             channel: Camera channel number (1-based).
             quality: Stream quality. Falls back to :attr:`default_quality` when *None*.
-            codec:   Unused in this URL scheme but kept for API consistency.
         """
         s = self.default_quality.value if quality is None else quality.value
         return (
