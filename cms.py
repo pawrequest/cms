@@ -13,14 +13,16 @@ DEFAULT_CHANNELS = [2, 6]
 # HOME_ETH = ("192.168.0.127", "192.168.0.254")
 
 
-def change_ip(ip_address, gateway):
-    """Run the Ethernet configuration script to change subnets."""
+def change_ip(ip_address, gateway, eth_script=r"D:\prdev\tools\cms\bats\eth.bat"):
+    """Run the Ethernet configuration script to change subnets.
+    :param eth_script: Path to the Ethernet configuration script.
+    """
     # ETH_SCRIPT = r"E:\DOCS\Desktop\cms\bats\eth.bat"
     subprocess.run(
         [
             'powershell',
             '-Command',
-            f'Start-Process cmd.exe -ArgumentList "/c, {ETH_SCRIPT} {ip_address} {gateway}" -Verb RunAs -Wait',
+            f'Start-Process cmd.exe -ArgumentList "/c, {eth_script} {ip_address} {gateway}" -Verb RunAs -Wait',
         ],
         check=True,
     )
@@ -47,7 +49,7 @@ def main():
     launch_vlc_channels(channels)
     # time.sleep(2)
     # Get channels to launch
-    # user_channels = input("Enter channels (space-separated, default: 2 6): ").strip()
+    user_channels = input("Enter channels (space-separated, default: 2 6): ").strip()
 
     while True:
         # User prompt
