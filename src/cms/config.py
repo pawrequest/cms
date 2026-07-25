@@ -88,4 +88,4 @@ class CMSConfig:
 
 
 def default_config() -> CMSConfig:
-    return CMSConfig.from_toml(Path(r'D:\prdev\tools\cms\default_conf.toml'))
+    return CMSConfig.from_toml(_PROJECT_ROOT / 'default_conf.toml')

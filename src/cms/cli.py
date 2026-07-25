@@ -166,8 +166,16 @@ def ui_loop(player: CMSPlayer) -> None:
     '--host', default=None, envvar='RTSP_HOST', help='RTSP host (overrides RTSP_HOST env var).'
 )
 @click.option('--gui', is_flag=True, default=False, help='Launch the graphical interface instead.')
+@click.option(
+    '--config',
+    '-C',
+    'config_path',
+    default=None,
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help='Path to a TOML config file (defaults to <project-root>/default_conf.toml). Overridden by other options where passed',
+)
 @click.version_option(package_name='cms')
-def main(channels, quality, host, gui) -> None:
+def main(channels, quality, host, gui, config_path) -> None:
     """CMS — Camera Management System.
 
     Open RTSP camera feeds in VLC from the terminal or a simple GUI.
@@ -187,7 +195,10 @@ def main(channels, quality, host, gui) -> None:
         run_gui()
         return
 
-    config = default_config()
+    config = CMSConfig.from_toml(config_path) if config_path else default_config()
+    setup_logging(config.debug)
+    log.debug('Config loaded: path=%s debug=%s host=%s', config.path, config.debug, config.rtsp_host)
+
     if quality:
         config.default_quality = (
             StreamQuality.LOW if quality.lower().startswith('l') else StreamQuality.HIGH
