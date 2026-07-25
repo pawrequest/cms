@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import tkinter as tk
 from tkinter import font as tkfont
 
@@ -22,6 +23,17 @@ RED = '#f38ba8'
 MAUVE = '#cba6f7'
 ACTIVE_CH_BG = '#89b4fa'
 ACTIVE_CH_FG = '#1e1e2e'
+
+
+def _grid_cols(n: int, *, min_cols: int = 1, max_cols: int = 10) -> int:
+    """Return a sensible column count for *n* items.
+
+    Targets a roughly square grid, clamped between *min_cols* and *max_cols*.
+    """
+    if n <= 0:
+        return min_cols
+    cols = math.ceil(math.sqrt(n))
+    return max(min_cols, min(cols, max_cols))
 
 
 def _btn(parent: tk.Widget, text: str, command, fg: str = TEXT, **kw) -> tk.Button:
@@ -85,24 +97,37 @@ class CMSApp(tk.Tk):
         ).pack(pady=(0, 10))
 
         # ── Group buttons ──────────────────────────────────────────────
-        grp_frame = self._labeled_frame('Channel Groups')
-        grp_frame.pack(padx=14, pady=(0, 6), fill='x')
-
         groups = [(_.title(), _) for _ in self.player.config.channel_groups]
-        for col, (label, key) in enumerate(groups):
-            _btn(
-                grp_frame,
-                label,
-                command=lambda k=key: self._open_group(k),
-                font=base_font,
-                width=7,
-            ).grid(row=0, column=col, padx=4, pady=7)
+        n_groups = len(groups)
+
+        if n_groups:
+            grp_frame = self._labeled_frame('Channel Groups')
+            grp_frame.pack(padx=14, pady=(0, 6), fill='x')
+
+            # Spread groups: aim for a near-square grid, max 4 per row.
+            grp_cols = _grid_cols(n_groups, max_cols=4)
+            for idx, (label, key) in enumerate(groups):
+                # Widen buttons when there are few groups so they fill the row.
+                btn_w = max(7, 50 // grp_cols)
+                _btn(
+                    grp_frame,
+                    label,
+                    command=lambda k=key: self._open_group(k),
+                    font=base_font,
+                    width=btn_w,
+                ).grid(row=idx // grp_cols, column=idx % grp_cols, padx=4, pady=7, sticky='ew')
+            # Let every column expand equally so buttons fill the frame.
+            for c in range(grp_cols):
+                grp_frame.columnconfigure(c, weight=1)
 
         # ── Individual channel picker ──────────────────────────────────
+        n_ch = self.player.config.max_channel
         ch_frame = self._labeled_frame('Channels  (click to select, then Reload)')
         ch_frame.pack(padx=14, pady=(0, 6), fill='x')
 
-        for idx, ch in enumerate(range(1, self.player.config.max_channel + 1)):
+        # 8 buttons per row feels natural; only shrink for very small counts.
+        ch_cols = min(n_ch, 8)
+        for idx, ch in enumerate(range(1, n_ch + 1)):
             btn = _btn(
                 ch_frame,
                 str(ch),
@@ -110,8 +135,10 @@ class CMSApp(tk.Tk):
                 font=base_font,
                 width=4,
             )
-            btn.grid(row=idx // 8, column=idx % 8, padx=3, pady=4)
+            btn.grid(row=idx // ch_cols, column=idx % ch_cols, padx=3, pady=4, sticky='ew')
             self._chan_btns[ch] = btn
+        for c in range(ch_cols):
+            ch_frame.columnconfigure(c, weight=1)
 
         # ── Quality ────────────────────────────────────────────────────
         q_frame = tk.Frame(self, bg=BG)
