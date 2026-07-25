@@ -125,19 +125,35 @@ class CMSApp(tk.Tk):
                 grp_frame.columnconfigure(c, weight=1)
 
         # ── Individual channel picker ──────────────────────────────────
-        n_ch = self.player.config.max_channel
+        channels_map = self.player.config.channels  # dict[int, str], may be empty
+        has_names = bool(channels_map)
+
+        # Use named channels when available, otherwise fall back to max_channel range.
+        if has_names:
+            ch_list = sorted(channels_map.keys())
+        else:
+            ch_list = list(range(1, self.player.config.max_channel + 1))
+
+        n_ch = len(ch_list)
         ch_frame = self._labeled_frame('Channels  (click to select, then Reload)')
         ch_frame.pack(padx=14, pady=(0, 6), fill='x')
 
-        # 8 buttons per row feels natural; only shrink for very small counts.
-        ch_cols = min(n_ch, 8)
-        for idx, ch in enumerate(range(1, n_ch + 1)):
+        # Named channels: fewer per row so labels fit; plain numbers: 8 per row.
+        if has_names:
+            ch_cols = min(n_ch, 4)
+            btn_w = 14
+        else:
+            ch_cols = min(n_ch, 8)
+            btn_w = 4
+
+        for idx, ch in enumerate(ch_list):
+            label = f'{ch} · {channels_map[ch]}' if has_names else str(ch)
             btn = _btn(
                 ch_frame,
-                str(ch),
+                label,
                 command=lambda c=ch: self._toggle_channel(c),
                 font=base_font,
-                width=4,
+                width=btn_w,
             )
             btn.grid(row=idx // ch_cols, column=idx % ch_cols, padx=3, pady=4, sticky='ew')
             self._chan_btns[ch] = btn
@@ -423,6 +439,11 @@ class CMSApp(tk.Tk):
     def _set_status(self, msg: str) -> None:
         self._status_var.set(msg)
 
+    def _channel_label(self, ch: int) -> str:
+        """Return 'ch · name' when a name is configured, otherwise just the number."""
+        name = self.player.config.channels.get(ch)
+        return f'{ch} · {name}' if name else str(ch)
+
     def _highlight_channels(self, channels: list[int]) -> None:
         """Visually mark *channels* as active, clear all others."""
         for ch, btn in self._chan_btns.items():
@@ -458,7 +479,8 @@ class CMSApp(tk.Tk):
         self.player.close_all()
         self.player.open_and_tile_channels(channels)
         self._highlight_channels(channels)
-        self._set_status(f'Opened channels: {channels} — tiling…')
+        labels = ', '.join(self._channel_label(c) for c in channels)
+        self._set_status(f'Opened: {labels} — tiling…')
 
     def _open_group(self, group: str) -> None:
         self._launch(self.player.config.channel_groups[group])

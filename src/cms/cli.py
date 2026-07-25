@@ -45,7 +45,17 @@ def _parse_channels(text: str) -> list[int]:
 
 
 def _print_status(player: CMSPlayer) -> None:
-    channels_str = ', '.join(str(c) for c in player.active_channels) or '[dim]none[/dim]'
+    channels_map = player.config.channels  # dict[int, str], may be empty
+    if channels_map:
+        channels_str = (
+            ', '.join(
+                f'{c} · {channels_map[c]}' if c in channels_map else str(c)
+                for c in player.active_channels
+            )
+            or '[dim]none[/dim]'
+        )
+    else:
+        channels_str = ', '.join(str(c) for c in player.active_channels) or '[dim]none[/dim]'
     quality_str = QUALITY_STYLE[player.stream_quality]
 
     header = Panel(

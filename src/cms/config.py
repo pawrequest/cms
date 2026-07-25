@@ -86,6 +86,9 @@ class CMSConfig:
         if 'default_quality' in data:
             data['default_quality'] = StreamQuality[data['default_quality']]
 
+        if 'channels' in data:
+            data['channels'] = {int(k): v for k, v in data['channels'].items()}
+
         data['path'] = tomlfile
 
         return cls(**data)
