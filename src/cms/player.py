@@ -58,7 +58,7 @@ class CMSPlayer:
                 '--qt-minimal-view',     # hide control bar / scrubber
                 '--no-video-title-show', # suppress OSD title overlay
             ]
-        log.debug('Launching VLC for channel %d: %s', channel, url)
+        log.debug('Launching VLC for channel %d', channel)
         proc = subprocess.Popen(cmd)
         self._processes.append(proc)
 
