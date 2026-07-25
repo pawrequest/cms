@@ -67,6 +67,7 @@ class CMSApp(tk.Tk):
 
         log.debug('CMSApp init — config=%s', config.path if config else None)
         self.player = CMSPlayer(config)
+
         self._selected: set[int] = set()
         self._chan_btns: dict[int, tk.Button] = {}
         self._quality_var_i = tk.IntVar(value=self.player.stream_quality.value)
@@ -481,7 +482,8 @@ class CMSApp(tk.Tk):
             return
         log.debug('launch: channels=%s quality=%s', channels, self.player.stream_quality)
         self.player.close_all()
-        self.player.open_and_tile_channels(channels)
+        self.player.open_and_tile_channels(channels, tile=False)
+        self.player.tiler.tile()
         self._highlight_channels(channels)
         labels = ', '.join(self._channel_label(c) for c in channels)
         self._set_status(f'Opened: {labels} — tiling…')

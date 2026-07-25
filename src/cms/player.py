@@ -4,13 +4,11 @@ from __future__ import annotations
 
 import logging
 import subprocess
-import threading
-import time
 from collections.abc import Sequence
 
 from .channels import StreamQuality
 from .config import CMSConfig
-from .tiling import VLC_DELAY_MS
+from .tiling import Tiler, VLC_DELAY_MS
 
 log = logging.getLogger(__name__)
 
@@ -33,8 +31,8 @@ class CMSPlayer:
         self.stream_quality: StreamQuality = config.default_quality
         self._active_channels: list[int] = []
         self._processes: list[subprocess.Popen] = []
+        self.tiler = Tiler(self._processes)
         log.debug('CMSPlayer init — quality=%s initial_group=%s', self.stream_quality, config.initial_group_name)
-        # self.open_group(self.config.initial_group_name)
 
     # ------------------------------------------------------------------ #
     # Read-only state
@@ -69,9 +67,8 @@ class CMSPlayer:
         self._active_channels = sorted_channels
         for ch in sorted_channels:
             self.open_channel(ch)
-
         if tile:
-            self.tile_windows()
+            self.tiler.tile()
 
     def open_group(self, group: str) -> None:
         """Open a named channel group.
@@ -128,19 +125,3 @@ class CMSPlayer:
                 proc.terminate()
         self._processes.clear()
 
-    def tile_windows(self, timeout: float = 5.0, *, delay_ms: float = VLC_DELAY_MS) -> None:
-        """Arrange all open VLC windows in a grid.
-
-        Polls for up to *timeout* seconds waiting for VLC to create its
-        windows, then tiles them across the work area.  Returns True on
-        success.  No-op on non-Windows platforms.
-        """
-        from .tiling import tile_vlc_windows
-
-        if delay_ms:
-            time.sleep(delay_ms / 1000)
-        pids = {p.pid for p in self._processes if p.poll() is None}
-
-        threading.Thread(
-            target=lambda: tile_vlc_windows(pids, timeout=timeout), daemon=True
-        ).start()

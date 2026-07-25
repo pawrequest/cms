@@ -34,6 +34,14 @@ class CMSConfig:
     channel_groups: dict[str, list[int]] = field(default_factory=dict[str, list[int]])
     initial_group_name: str = ''
 
+    def __post_init__(self):
+        self.channel_groups.setdefault('all', self.all_channels)
+
+    @property
+    def all_channels(self) -> list[int]:
+        return list(self.channels.keys()) if self.channels \
+            else list(range(1, self.max_channel + 1))
+
     @property
     def initial_group(self) -> list[int]:
         return self.channel_groups[self.initial_group_name] if self.initial_group_name \
@@ -124,7 +132,7 @@ def setup_logging(debug: bool = True) -> None:
     handler = logging.StreamHandler()
     handler.setLevel(level)
     fmt = logging.Formatter(
-        '[%(asctime)s] %(levelname)-8s "%(pathname)s:%(lineno)d" — %(message)s',
+        '[%(asctime)s] %(levelname)-8s %(name)s %(message)s "%(pathname)s:%(lineno)d"',
         datefmt='%H:%M:%S',
     )
     handler.setFormatter(fmt)
