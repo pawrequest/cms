@@ -11,7 +11,7 @@ import threading
 import time
 from subprocess import Popen
 
-VLC_DELAY_MS = 1600
+VLC_DELAY_MS = 2000
 
 log = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ def tile_hwnds(hwnds: list[int]) -> bool:
     return True
 
 
-def tile_windows(pids: set[int], timeout: float = 5.0) -> bool:
+def tile_windows(pids: set[int], timeout: float = 5.0, extra_hwnds: list[int] | None = None) -> bool:
     """Find windows owned by *pids* and arrange them in a grid.
 
     Polls until every expected window is visible or *timeout* seconds elapse.
@@ -92,9 +92,9 @@ def tile_windows(pids: set[int], timeout: float = 5.0) -> bool:
         return found
 
     deadline = time.monotonic() + timeout
-    hwnds: list[int] = []
+    hwnds = list(extra_hwnds) if extra_hwnds else []
     while time.monotonic() < deadline:
-        hwnds = _find()
+        hwnds.extend(_find())
         if len(hwnds) >= len(pids):
             break
         time.sleep(0.25)
@@ -118,14 +118,23 @@ class Tiler:
         tiler.tile()   # call after launching channels
     """
 
-    def __init__(self, procs: list[Popen]) -> None:
-        self._procs = procs          # shared reference — owned by CMSPlayer
+    def __init__(self, procs: list[Popen], pinned_hwnds: set[int] = None) -> None:
+        self._procs = procs  # shared reference — owned by CMSPlayer
+        self.pinned_hwnds = set(pinned_hwnds) if pinned_hwnds is not None else set()
+
+    def pin_hwnd(self, hwnd: int) -> None:
+        """Add a window handle to the pinned set, which is tiled along with
+        the windows owned by the managed processes."""
+        self.pinned_hwnds.add(hwnd)
 
     # ------------------------------------------------------------------ #
     # Tiling
     # ------------------------------------------------------------------ #
 
-    def tile(self, timeout: float = 5.0, *, delay_ms: float = VLC_DELAY_MS) -> None:
+    def add_self(self):
+        self.pinned_hwnds.add(ctypes.windll.user32.GetForegroundWindow())
+
+    def tile(self, timeout: float = 5.0, *, delay_ms: float = VLC_DELAY_MS, extra_hwnds: list[int] = None) -> None:
         """Arrange all managed windows in a grid.
 
         Sleeps *delay_ms* milliseconds first to let VLC finish initialising
@@ -138,9 +147,14 @@ class Tiler:
         pids = {p.pid for p in self._procs if p.poll() is None}
         log.debug('Tiler.tile: pids=%s delay_ms=%s', pids, delay_ms)
 
+        delay = len(pids) * 0.3
+        delay = max(delay, VLC_DELAY_MS / 1000)
+        log.debug('Tiler.tile: calculated delay=%s seconds', delay)
+
         def _run() -> None:
             if delay_ms:
-                time.sleep(delay_ms / 1000)
-            tile_windows(pids, timeout=timeout)
+                time.sleep(delay)
+                # time.sleep(delay_ms / 1000)
+            tile_windows(pids, timeout=timeout, extra_hwnds=extra_hwnds)
 
         threading.Thread(target=_run, daemon=True).start()

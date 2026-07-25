@@ -154,7 +154,9 @@ def ui_loop(player: CMSPlayer) -> None:
                 log.debug('Opening channels: %s', nums)
                 console.print(f'[blue]Opening channels: {nums}[/blue]')
                 player.close_all()
-                player.open_and_tile_channels(nums)
+                player.open_channels(nums)
+                player.tiler.tile()
+
             else:
                 log.debug('Unknown command: %r', raw)
                 console.print(
@@ -240,7 +242,8 @@ def main(channels, quality, host, gui, config_path) -> None:
         nums = _parse_channels(channels)
         if nums:
             log.debug('Opening channels from --channels flag: %s', nums)
-            player.open_and_tile_channels(nums)
+            player.open_channels(nums)
+            player.tiler.tile()
             console.print('[blue]Tiling…[/blue]')
         else:
             console.print('[red]No valid channel numbers in --channels.[/red]')

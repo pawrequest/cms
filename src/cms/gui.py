@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import math
 import tkinter as tk
+from functools import lru_cache
 from tkinter import font as tkfont
 
 from .channels import StreamQuality
@@ -63,10 +64,11 @@ class CMSApp(tk.Tk):
         super().__init__()
         self.title('CMS — Camera Management')
         self.configure(bg=BG)
-        self.resizable(False, False)
+        self.resizable(True, True)
 
         log.debug('CMSApp init — config=%s', config.path if config else None)
         self.player = CMSPlayer(config)
+        # self.player.tiler.pin_hwnd(self.winfo_id())  # include main window in tiling
 
         self._selected: set[int] = set()
         self._chan_btns: dict[int, tk.Button] = {}
@@ -76,8 +78,10 @@ class CMSApp(tk.Tk):
         self.protocol('WM_DELETE_WINDOW', self._on_close)
         if self.player.config.initial_group:
             self.launch(self.player.config.initial_group)
+        # self.hwnd = self.winfo_id()
 
-    # ------------------------------------------------------------------ #
+        # ------------------------------------------------------------------ #
+
     # Build UI
     # ------------------------------------------------------------------ #
 
@@ -475,6 +479,18 @@ class CMSApp(tk.Tk):
 
     # ── Channel actions ────────────────────────────────────────────────
 
+    def maybe_hwnd(self, num_channels: int) -> list[int]:
+        """if should tile the gui, then return our hwnd"""
+        if not should_tile_gui(num_channels):
+            return []
+        # winfo_id() returns Tk's internal child-frame HWND on Windows.
+        # We must walk up to the real decorated top-level window via GetParent.
+        import ctypes
+        child_hwnd = self.winfo_id()
+        hwnd = ctypes.windll.user32.GetParent(child_hwnd) or child_hwnd
+        log.debug('maybe_hwnd: child_hwnd=%s top_hwnd=%s', child_hwnd, hwnd)
+        return [hwnd]
+
     def launch(self, channels: list[int]) -> None:
         """Close existing streams, open *channels* at current quality, then tile."""
         if not channels:
@@ -482,8 +498,10 @@ class CMSApp(tk.Tk):
             return
         log.debug('launch: channels=%s quality=%s', channels, self.player.stream_quality)
         self.player.close_all()
-        self.player.open_and_tile_channels(channels, tile=False)
-        self.player.tiler.tile()
+        self.player.open_channels(channels)
+
+        added_hwnds = self.maybe_hwnd(len(channels))
+        self.player.tiler.tile(extra_hwnds=added_hwnds)
         self._highlight_channels(channels)
         labels = ', '.join(self._channel_label(c) for c in channels)
         self._set_status(f'Opened: {labels} — tiling…')
@@ -538,6 +556,34 @@ def run_gui(config: CMSConfig | None = None) -> None:
     log.debug('run_gui: debug=%s config=%s', config.debug, config.path)
     app = CMSApp(config)
     app.mainloop()
+
+
+@lru_cache
+def should_tile_gui(num_channels: int) -> bool:
+    # if is a square number, don't tile GUI
+    if math.isqrt(num_channels) ** 2 == num_channels:
+        log.debug(f'{num_channels} is a perfect square')
+        return False
+    # if num_channels % 2 == 0:
+    #     log.debug(f'{num_channels} divisible by 2')
+    #     return False
+    if num_channels in [2, 6, 12]:
+        log.debug(f'{num_channels} in magic list')
+        return False
+    log.debug('tiling gui')
+    return True
+
+    # if num_channels % 3 == 0:
+    #     log.debug(f'{num_channels} divisible by 3')
+    #     return False
+    # if num_channels % 4 == 0:
+    #     log.debug(f'{num_channels} divisible by 4')
+    #     return False
+    # if num_channels in [1, 2]:
+    #     log.debug(f'{num_channels} is 1 or 2')
+    #     return False
+    # log.debug(f'{num_channels} tiling GUI')
+    # return True
 
 
 if __name__ == '__main__':

@@ -8,7 +8,7 @@ from collections.abc import Sequence
 
 from .channels import StreamQuality
 from .config import CMSConfig
-from .tiling import Tiler, VLC_DELAY_MS
+from .tiling import Tiler
 
 log = logging.getLogger(__name__)
 
@@ -53,22 +53,20 @@ class CMSPlayer:
         cmd = [self.config.vlc_path, url]
         if self.config.minimal_view:
             cmd += [
-                '--qt-minimal-view',     # hide control bar / scrubber
-                '--no-video-title-show', # suppress OSD title overlay
+                '--qt-minimal-view',  # hide control bar / scrubber
+                '--no-video-title-show',  # suppress OSD title overlay
             ]
         log.debug('Launching VLC for channel %d', channel)
         proc = subprocess.Popen(cmd)
         self._processes.append(proc)
 
-    def open_and_tile_channels(self, channels: Sequence[int], tile: bool = True) -> None:
+    def open_channels(self, channels: Sequence[int]) -> None:
         """Launch VLC for every channel in *channels* and record them as active."""
-        log.debug('open_and_tile_channels: channels=%s tile=%s', list(channels), tile)
+        log.debug('open_channels: channels=%s', list(channels))
         sorted_channels = sorted(list(channels), reverse=True)
         self._active_channels = sorted_channels
         for ch in sorted_channels:
             self.open_channel(ch)
-        if tile:
-            self.tiler.tile()
 
     def open_group(self, group: str) -> None:
         """Open a named channel group.
@@ -81,13 +79,13 @@ class CMSPlayer:
         """
         log.debug('open_group: %r', group)
         channels = self.config.channel_groups[group.lower()]
-        self.open_and_tile_channels(channels)
+        self.open_channels(channels)
 
     def reload(self) -> None:
         """Close all VLC windows and reopen the active channels."""
         log.debug('reload: active_channels=%s', self._active_channels)
         self.close_all()
-        self.open_and_tile_channels(self._active_channels)
+        self.open_channels(self._active_channels)
 
     # ------------------------------------------------------------------ #
     # Quality
@@ -124,4 +122,3 @@ class CMSPlayer:
             if proc.poll() is None:
                 proc.terminate()
         self._processes.clear()
-
