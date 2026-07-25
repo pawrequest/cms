@@ -1,6 +1,6 @@
 [project]
 name = "cms"
-version = "0.2.0"
+version = "0.0.1"
 description = "Camera Management System — open RTSP camera feeds in VLC"
 readme = "README.md"
 requires-python = ">=3.11"
