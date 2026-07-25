@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import sys
 from pathlib import Path
 
 import click
@@ -202,13 +201,6 @@ def main(channels, quality, host, gui, config_path) -> None:
       cms --quality high          # start in high-quality mode
       cms --gui                   # launch the graphical interface
     """
-    if gui:
-        from .gui import run_gui
-
-        log.debug('Launching GUI mode')
-        run_gui()
-        return
-
     config = CMSConfig.from_toml(config_path) if config_path else default_config()
     setup_logging(config.debug)
     log.debug('Config loaded: path=%s debug=%s host=%s', config.path, config.debug, config.rtsp_host)
@@ -222,16 +214,26 @@ def main(channels, quality, host, gui, config_path) -> None:
         config.rtsp_host = host
         log.debug('Host overridden to %s', host)
 
+    if gui:
+        from .gui import run_gui
+
+        log.debug('Launching GUI mode')
+        run_gui(config)
+        return
+
     player = CMSPlayer(config)
-    log.debug('CMSPlayer created; default group=%s', config.default_group_name)
+    log.debug('CMSPlayer created; default group=%s', config.initial_group_name)
 
-    if channels:
+    if config.initial_group_name and config.channel_groups:
+        player.open_group(config.initial_group_name)
+        console.print(f'[blue]Opening default group [bold]{config.initial_group_name}[/bold]…[/blue]')
+
+    elif channels:
         nums = _parse_channels(channels)
-        if not nums:
+        if nums:
+            log.debug('Opening channels from --channels flag: %s', nums)
+            player.open_and_tile_channels(nums)
+            console.print('[blue]Tiling…[/blue]')
+        else:
             console.print('[red]No valid channel numbers in --channels.[/red]')
-            sys.exit(1)
-        log.debug('Opening channels from --channels flag: %s', nums)
-        player.open_and_tile_channels(nums)
-        console.print('[blue]Tiling…[/blue]')
-
     ui_loop(player)

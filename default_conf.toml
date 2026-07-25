@@ -5,15 +5,21 @@
 rtsp_host = "192.168.1.8"
 rtsp_port = 554
 
-default_group_name = "doors"
-max_channel = 16
-
 vlc_path = 'C:\Program Files (x86)\VideoLAN\VLC\vlc.exe'
-minimal_view = true   # hide VLC controls/menu bar (--qt-minimal-view)
+minimal_view = true
 
 rtp_caching = 100
 default_quality = "HIGH"
 default_codec = "H264"
 
+[channels] # optional
+1 = "front"
+2 = "back"
+max_channel = 16 # if no channels provided we have this many numbered channels
+
 [channel_groups]
-doors = [2, 6]
+doors = [1, 2]
+
+initial_group_name = "doors"
+
+

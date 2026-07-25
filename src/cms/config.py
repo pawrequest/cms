@@ -29,14 +29,14 @@ class CMSConfig:
     rtsp_port: int = 554
 
     # Channels
+    channels: dict[int, str] = field(default_factory=dict[int, str])
+    max_channel: int = 16
     channel_groups: dict[str, list[int]] = field(default_factory=dict[str, list[int]])
-    default_group_name: str = ''
+    initial_group_name: str = ''
 
     @property
-    def default_group(self) -> list[int]:
-        return self.channel_groups[self.default_group_name]
-
-    max_channel: int = 16
+    def initial_group(self) -> list[int]:
+        return self.channel_groups[self.initial_group_name]
 
     # VLC
     vlc_path: str = field(
@@ -118,8 +118,10 @@ def setup_logging(debug: bool = True) -> None:
 
     handler = logging.StreamHandler()
     handler.setLevel(level)
-    fmt = logging.Formatter('[%(asctime)s] %(levelname)-8s %(name)s — %(message)s',
-                            datefmt='%H:%M:%S')
+    fmt = logging.Formatter(
+        '[%(asctime)s] %(levelname)-8s %(name)s — %(message)s  %(pathname)s:%(lineno)d',
+        datefmt='%H:%M:%S',
+    )
     handler.setFormatter(fmt)
     logger.addHandler(handler)
 
