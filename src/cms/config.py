@@ -49,6 +49,9 @@ class CMSConfig:
     default_quality: StreamQuality = StreamQuality.HIGH
     default_codec: str = 'H264'
 
+    # storage
+    path: Path | None = None
+
     # ------------------------------------------------------------------ #
     def build_url(
             self,
@@ -78,26 +81,10 @@ class CMSConfig:
         if 'default_quality' in data:
             data['default_quality'] = StreamQuality[data['default_quality']]
 
+        data['path'] = tomlfile
+
         return cls(**data)
 
 
-# def cms_config_toml_1() -> CMSConfig:
-#     with open
-#     ...
-
-
-def cms_config_1() -> CMSConfig:
-    return CMSConfig(
-        channel_groups={
-            'doors': [2, 6],
-            'front': [1, 2, 6, 8],
-            'main': [1],
-            'office': [4, 10],
-            'all': list(range(1, 17)),
-        },
-        default_group_name='doors',
-        rtsp_user=os.getenv('RTSP_USER'),
-        rtsp_pass=os.getenv('RTSP_PASS'),
-        rtsp_host='192.168.1.8',
-        rtsp_port=554,
-    )
+def default_config() -> CMSConfig:
+    return CMSConfig.from_toml(Path(r'D:\prdev\tools\cms\default_conf.toml'))

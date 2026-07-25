@@ -88,13 +88,7 @@ class CMSApp(tk.Tk):
         grp_frame = self._labeled_frame('Channel Groups')
         grp_frame.pack(padx=14, pady=(0, 6), fill='x')
 
-        groups = [
-            ('Doors', 'doors'),
-            ('Front', 'front'),
-            ('Main', 'main'),
-            ('Office', 'office'),
-            ('All', 'all'),
-        ]
+        groups = [(_.title(), _) for _ in self.player.config.channel_groups]
         for col, (label, key) in enumerate(groups):
             _btn(
                 grp_frame,
@@ -218,20 +212,36 @@ class CMSApp(tk.Tk):
             e.grid(row=row, column=1, padx=(0, 8), pady=3)
             return e
 
+        # ── Config file (click for context menu) ─────────────────────
+        _label('Config file:', 0)
+        cfg_path = self.player.config.path
+        cfg_name = cfg_path.name if cfg_path else '—'
+        self._cfg_lbl = tk.Label(
+            self._settings_frame,
+            text=cfg_name,
+            bg=BG,
+            fg=BLUE,
+            font=small,
+            anchor='w',
+            cursor='hand2',
+        )
+        self._cfg_lbl.grid(row=0, column=1, padx=(0, 8), pady=3, sticky='w')
+        self._cfg_lbl.bind('<Button-1>', self._show_config_menu)
+
         # ── Host ──────────────────────────────────────────────────────
-        _label('Host:', 0)
+        _label('Host:', 1)
         self._host_var = tk.StringVar(value=self.player.config.rtsp_host)
-        _entry(self._host_var, 0)
+        _entry(self._host_var, 1)
 
         # ── Username ──────────────────────────────────────────────────
-        _label('Username:', 1)
+        _label('Username:', 2)
         self._user_var = tk.StringVar(value=self.player.config.rtsp_user or '')
-        _entry(self._user_var, 1)
+        _entry(self._user_var, 2)
 
         # ── Password ──────────────────────────────────────────────────
-        _label('Password:', 2)
+        _label('Password:', 3)
         self._pass_var = tk.StringVar(value=self.player.config.rtsp_pass or '')
-        _entry(self._pass_var, 2, show='•')
+        _entry(self._pass_var, 3, show='•')
 
         # ── Hint ──────────────────────────────────────────────────────
         tk.Label(
@@ -241,11 +251,11 @@ class CMSApp(tk.Tk):
             fg=OVERLAY,
             font=tkfont.Font(family='Segoe UI', size=8, slant='italic'),
             wraplength=240,
-        ).grid(row=3, column=0, columnspan=2, padx=8, pady=(0, 2))
+        ).grid(row=4, column=0, columnspan=2, padx=8, pady=(0, 2))
 
         # ── Buttons row ───────────────────────────────────────────────
         btn_row = tk.Frame(self._settings_frame, bg=BG)
-        btn_row.grid(row=4, column=0, columnspan=2, pady=(4, 8))
+        btn_row.grid(row=5, column=0, columnspan=2, pady=(4, 8))
 
         tk.Button(
             btn_row,
@@ -306,6 +316,73 @@ class CMSApp(tk.Tk):
         self.player.config.rtsp_user = user or self.player.config.rtsp_user
         self.player.config.rtsp_pass = passwd or self.player.config.rtsp_pass
         self._set_status('Credentials reloaded from environment.')
+
+    # ── Config-file context menu ───────────────────────────────────────
+
+    def _show_config_menu(self, event: tk.Event) -> None:
+        """Pop up a small context menu on the config filename label."""
+        menu = tk.Menu(
+            self, tearoff=0, bg=SURFACE, fg=TEXT,
+            activebackground=OVERLAY, activeforeground=TEXT,
+            relief='flat', bd=0
+        )
+        cfg_path = self.player.config.path
+        menu.add_command(
+            label='Open file',
+            state='normal' if cfg_path else 'disabled',
+            command=self._cfg_open_file,
+        )
+        menu.add_command(
+            label='Open path',
+            state='normal' if cfg_path else 'disabled',
+            command=self._cfg_open_path,
+        )
+        menu.add_separator()
+        menu.add_command(label='Replace…', command=self._cfg_replace)
+        menu.tk_popup(event.x_root, event.y_root)
+
+    def _cfg_open_file(self) -> None:
+        """Open the config TOML in the system default text editor."""
+        import os
+        path = self.player.config.path
+        if path:
+            os.startfile(str(path))
+
+    def _cfg_open_path(self) -> None:
+        """Reveal the config file's parent directory in Windows Explorer."""
+        import subprocess
+        path = self.player.config.path
+        if path:
+            subprocess.Popen(['explorer', str(path.parent)])
+
+    def _cfg_replace(self) -> None:
+        """Let the user pick a new TOML file and hot-reload the config."""
+        from tkinter import filedialog
+        from .config import CMSConfig
+        current = self.player.config.path
+        initial_dir = str(current.parent) if current else '/'
+        new_path_str = filedialog.askopenfilename(
+            parent=self,
+            title='Select config TOML',
+            initialdir=initial_dir,
+            filetypes=[('TOML files', '*.toml'), ('All files', '*.*')],
+        )
+        if not new_path_str:
+            return  # user cancelled
+        from pathlib import Path
+        new_path = Path(new_path_str)
+        try:
+            new_cfg = CMSConfig.from_toml(new_path)
+        except Exception as exc:
+            self._set_status(f'Failed to load config: {exc}')
+            return
+        self.player.config = new_cfg
+        # Refresh settings fields
+        self._cfg_lbl.configure(text=new_path.name)
+        self._host_var.set(new_cfg.rtsp_host or '')
+        self._user_var.set(new_cfg.rtsp_user or '')
+        self._pass_var.set(new_cfg.rtsp_pass or '')
+        self._set_status(f'Config replaced: {new_path.name}')
 
     def _set_status(self, msg: str) -> None:
         self._status_var.set(msg)

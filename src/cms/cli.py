@@ -11,7 +11,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from .channels import StreamQuality
-from .config import cms_config_1
+from .config import default_config
 from .player import CMSPlayer
 
 console = Console()
@@ -172,7 +172,6 @@ def main(channels, quality, host, gui) -> None:
 
     Open RTSP camera feeds in VLC from the terminal or a simple GUI.
 
-    Credentials are read from the RTSP_USER and RTSP_PASS environment
     variables (set them before launching, as with cms.ps1).
 
     \b
@@ -188,7 +187,7 @@ def main(channels, quality, host, gui) -> None:
         run_gui()
         return
 
-    config = cms_config_1()
+    config = default_config()
     if quality:
         config.default_quality = (
             StreamQuality.LOW if quality.lower().startswith('l') else StreamQuality.HIGH

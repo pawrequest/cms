@@ -1,7 +1,7 @@
 # conf1.toml
 
-rtsp_user = ""        # fill this, or delete the line to fallback to RTSP_USER env var
-rtsp_pass = ""        # fill this, or delete the line to fallback to RTSP_PASS env var
+# rtsp_user = ""        # uncomment and fill this to override RTSP_USER env var
+# rtsp_pass = ""        # uncomment and fill this to override RTSP_PASS env var
 rtsp_host = "192.168.1.8"
 rtsp_port = 554
 
