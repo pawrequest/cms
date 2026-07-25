@@ -1,0 +1,18 @@
+# conf1.toml
+
+rtsp_user = ""        # fill this, or delete the line to fallback to RTSP_USER env var
+rtsp_pass = ""        # fill this, or delete the line to fallback to RTSP_PASS env var
+rtsp_host = "192.168.1.8"
+rtsp_port = 554
+
+default_group_name = "doors"
+max_channel = 16
+
+vlc_path = 'C:\Program Files (x86)\VideoLAN\VLC\vlc.exe'
+
+rtp_caching = 100
+default_quality = "HIGH"
+default_codec = "H264"
+
+[channel_groups]
+doors = [2, 6]
