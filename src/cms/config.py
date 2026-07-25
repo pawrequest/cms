@@ -43,6 +43,7 @@ class CMSConfig:
             'VLC_PATH', r'C:\Program Files (x86)\VideoLAN\VLC\vlc.exe'
         )
     )
+    minimal_view: bool = True  # hide controls/menu bar (--qt-minimal-view)
 
     # Stream tuning
     rtp_caching: int = 100

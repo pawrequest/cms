@@ -49,7 +49,13 @@ class CMSPlayer:
     def open_channel(self, channel: int) -> None:
         """Launch a single VLC instance for *channel*."""
         url = self.config.build_url(channel, quality=self.stream_quality)
-        proc = subprocess.Popen([self.config.vlc_path, url])
+        cmd = [self.config.vlc_path, url]
+        if self.config.minimal_view:
+            cmd += [
+                '--qt-minimal-view',     # hide control bar / scrubber
+                '--no-video-title-show', # suppress OSD title overlay
+            ]
+        proc = subprocess.Popen(cmd)
         self._processes.append(proc)
 
     def open_and_tile_channels(self, channels: Sequence[int], tile: bool = True) -> None:
