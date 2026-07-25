@@ -34,7 +34,7 @@ class CMSPlayer:
         self._active_channels: list[int] = []
         self._processes: list[subprocess.Popen] = []
         log.debug('CMSPlayer init — quality=%s initial_group=%s', self.stream_quality, config.initial_group_name)
-        self.open_group(self.config.initial_group_name)
+        # self.open_group(self.config.initial_group_name)
 
     # ------------------------------------------------------------------ #
     # Read-only state

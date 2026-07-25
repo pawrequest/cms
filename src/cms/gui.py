@@ -26,6 +26,8 @@ RED = '#f38ba8'
 MAUVE = '#cba6f7'
 ACTIVE_CH_BG = '#89b4fa'
 ACTIVE_CH_FG = '#1e1e2e'
+SELECTED = dict(bg=ACTIVE_CH_BG, fg=ACTIVE_CH_FG)
+UNSELECTED = dict(bg=SURFACE, fg=TEXT)
 
 
 def _grid_cols(n: int, *, min_cols: int = 1, max_cols: int = 10) -> int:
@@ -71,6 +73,8 @@ class CMSApp(tk.Tk):
 
         self._build_ui()
         self.protocol('WM_DELETE_WINDOW', self._on_close)
+        if self.player.config.initial_group:
+            self.launch(self.player.config.initial_group)
 
     # ------------------------------------------------------------------ #
     # Build UI
@@ -126,10 +130,10 @@ class CMSApp(tk.Tk):
 
         # ── Individual channel picker ──────────────────────────────────
         channels_map = self.player.config.channels  # dict[int, str], may be empty
-        has_names = bool(channels_map)
+        # has_names = bool(channels_map)
 
         # Use named channels when available, otherwise fall back to max_channel range.
-        if has_names:
+        if channels_map:
             ch_list = sorted(channels_map.keys())
         else:
             ch_list = list(range(1, self.player.config.max_channel + 1))
@@ -139,7 +143,7 @@ class CMSApp(tk.Tk):
         ch_frame.pack(padx=14, pady=(0, 6), fill='x')
 
         # Named channels: fewer per row so labels fit; plain numbers: 8 per row.
-        if has_names:
+        if channels_map:
             ch_cols = min(n_ch, 4)
             btn_w = 14
         else:
@@ -147,7 +151,7 @@ class CMSApp(tk.Tk):
             btn_w = 4
 
         for idx, ch in enumerate(ch_list):
-            label = f'{ch} · {channels_map[ch]}' if has_names else str(ch)
+            label = f'{ch} · {channels_map[ch]}' if channels_map else str(ch)
             btn = _btn(
                 ch_frame,
                 label,
@@ -448,34 +452,34 @@ class CMSApp(tk.Tk):
         """Visually mark *channels* as active, clear all others."""
         for ch, btn in self._chan_btns.items():
             if ch in channels:
-                btn.configure(bg=ACTIVE_CH_BG, fg=ACTIVE_CH_FG)
+                btn.configure(**SELECTED)
             else:
-                btn.configure(bg=SURFACE, fg=TEXT)
+                btn.configure(**UNSELECTED)
         self._selected = set(channels)
 
     def _toggle_channel(self, ch: int) -> None:
         if ch in self._selected:
             self._selected.discard(ch)
-            self._chan_btns[ch].configure(bg=SURFACE, fg=TEXT)
+            self._chan_btns[ch].configure(**UNSELECTED)
         else:
             self._selected.add(ch)
-            self._chan_btns[ch].configure(bg=ACTIVE_CH_BG, fg=ACTIVE_CH_FG)
+            self._chan_btns[ch].configure(**SELECTED)
 
     def _on_quality_change(self) -> None:
         """Sync radio button → player quality, then reload if streams are open."""
         # self.player.toggle_quality()
         self.player.set_quality(StreamQuality(self._quality_var_i.get()))
         if self.player.active_channels:
-            self._launch(self.player.active_channels)
+            self.launch(self.player.active_channels)
 
     # ── Channel actions ────────────────────────────────────────────────
 
-    def _launch(self, channels: list[int]) -> None:
+    def launch(self, channels: list[int]) -> None:
         """Close existing streams, open *channels* at current quality, then tile."""
         if not channels:
             self._set_status('No channels to open.')
             return
-        log.debug('_launch: channels=%s quality=%s', channels, self.player.stream_quality)
+        log.debug('launch: channels=%s quality=%s', channels, self.player.stream_quality)
         self.player.close_all()
         self.player.open_and_tile_channels(channels)
         self._highlight_channels(channels)
@@ -483,18 +487,18 @@ class CMSApp(tk.Tk):
         self._set_status(f'Opened: {labels} — tiling…')
 
     def _open_group(self, group: str) -> None:
-        self._launch(self.player.config.channel_groups[group])
+        self.launch(self.player.config.channel_groups[group])
 
     def _open_selected(self) -> None:
         if not self._selected:
             self._set_status('No channels selected — click channel numbers first.')
             return
-        self._launch(sorted(self._selected))
+        self.launch(sorted(self._selected))
 
     def _reload(self) -> None:
         """Re-open whatever channels are currently active (or selected)."""
         active = self.player.active_channels or sorted(self._selected)
-        self._launch(active)
+        self.launch(active)
 
     def _close_all(self) -> None:
         self.player.close_all()

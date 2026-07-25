@@ -36,7 +36,9 @@ class CMSConfig:
 
     @property
     def initial_group(self) -> list[int]:
-        return self.channel_groups[self.initial_group_name]
+        return self.channel_groups[self.initial_group_name] if self.initial_group_name \
+            else list(self.channels.keys())[0] if self.channels \
+            else []
 
     # VLC
     vlc_path: str = field(
