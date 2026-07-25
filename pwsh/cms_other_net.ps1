@@ -3,7 +3,7 @@ $cmsScript = Join-Path $PSScriptRoot '\cms.ps1'
 . $ethScript
 . $cmsScript
 
-$script:ADDRESS_ON_DVR_LAN = "192.168.1.127"
+$script:ADDRESS_ON_DVR_LAN = "192.168.1.10"
 $script:DVR_GATEWAY = "192.168.1.254"
 $script:DVR_IP = "192.168.1.10"
 
