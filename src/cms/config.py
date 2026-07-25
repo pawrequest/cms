@@ -124,7 +124,7 @@ def setup_logging(debug: bool = True) -> None:
     handler = logging.StreamHandler()
     handler.setLevel(level)
     fmt = logging.Formatter(
-        '[%(asctime)s] %(levelname)-8s %(name)s — %(message)s  %(pathname)s:%(lineno)d',
+        '[%(asctime)s] %(levelname)-8s "%(pathname)s:%(lineno)d" — %(message)s',
         datefmt='%H:%M:%S',
     )
     handler.setFormatter(fmt)
