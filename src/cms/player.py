@@ -65,8 +65,9 @@ class CMSPlayer:
     def open_and_tile_channels(self, channels: Sequence[int], tile: bool = True) -> None:
         """Launch VLC for every channel in *channels* and record them as active."""
         log.debug('open_and_tile_channels: channels=%s tile=%s', list(channels), tile)
-        self._active_channels = list(channels)
-        for ch in channels:
+        sorted_channels = sorted(list(channels), reverse=True)
+        self._active_channels = sorted_channels
+        for ch in sorted_channels:
             self.open_channel(ch)
 
         if tile:
