@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import logging
 import sys
+from pathlib import Path
 
 import click
 from rich import box
@@ -10,11 +12,13 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from . import CMSConfig
 from .channels import StreamQuality
-from .config import default_config
+from .config import default_config, setup_logging
 from .player import CMSPlayer
 
 console = Console()
+log = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -82,6 +86,7 @@ def _print_status(player: CMSPlayer) -> None:
 
 def ui_loop(player: CMSPlayer) -> None:
     """Blocking interactive loop. Exits when the user presses Enter."""
+    log.debug('Entering ui_loop; active_channels=%s', player.active_channels)
     while True:
         console.print()
         _print_status(player)
@@ -90,18 +95,22 @@ def ui_loop(player: CMSPlayer) -> None:
             raw = console.input('\n[bold cyan]>[/bold cyan] ').strip()
         except (EOFError, KeyboardInterrupt):
             console.print('\n[yellow]Interrupted — closing VLC.[/yellow]')
+            log.debug('ui_loop interrupted — closing all')
             player.close_all()
             return
 
         cmd = raw.lower()
+        log.debug('User command: %r', cmd)
 
         if cmd == '':
             player.close_all()
             console.print('[green]Closed. Goodbye![/green]')
+            log.debug('User exited via Enter')
             return
 
         elif cmd == 'r':
             console.print('[blue]Reloading…[/blue]')
+            log.debug('Reloading channels: %s', player.active_channels)
             player.reload()
 
         # elif cmd == "w":
@@ -118,11 +127,13 @@ def ui_loop(player: CMSPlayer) -> None:
             else:
                 player.toggle_quality()
             label = QUALITY_STYLE[player.stream_quality]
+            log.debug('Quality changed to %s — reloading', player.stream_quality)
             console.print(f'Quality → {label}  — reloading…')
             player.reload()
 
         elif cmd in GROUP_SHORTCUTS:
             group = GROUP_SHORTCUTS[cmd]
+            log.debug('Opening group %r', group)
             console.print(f'[blue]Opening group [bold]{group}[/bold]…[/blue]')
             player.close_all()
             player.open_group(group)
@@ -131,10 +142,12 @@ def ui_loop(player: CMSPlayer) -> None:
             # Try to parse as channel numbers
             nums = _parse_channels(cmd)
             if nums:
+                log.debug('Opening channels: %s', nums)
                 console.print(f'[blue]Opening channels: {nums}[/blue]')
                 player.close_all()
                 player.open_and_tile_channels(nums)
             else:
+                log.debug('Unknown command: %r', raw)
                 console.print(
                     f"[red]Unknown command '{raw}'. "
                     'Use a letter shortcut, channel numbers, or press Enter to exit.[/red]'
@@ -192,6 +205,7 @@ def main(channels, quality, host, gui, config_path) -> None:
     if gui:
         from .gui import run_gui
 
+        log.debug('Launching GUI mode')
         run_gui()
         return
 
@@ -203,16 +217,20 @@ def main(channels, quality, host, gui, config_path) -> None:
         config.default_quality = (
             StreamQuality.LOW if quality.lower().startswith('l') else StreamQuality.HIGH
         )
+        log.debug('Quality overridden to %s', config.default_quality)
     if host:
         config.rtsp_host = host
+        log.debug('Host overridden to %s', host)
 
     player = CMSPlayer(config)
+    log.debug('CMSPlayer created; default group=%s', config.default_group_name)
 
     if channels:
         nums = _parse_channels(channels)
         if not nums:
             console.print('[red]No valid channel numbers in --channels.[/red]')
             sys.exit(1)
+        log.debug('Opening channels from --channels flag: %s', nums)
         player.open_and_tile_channels(nums)
         console.print('[blue]Tiling…[/blue]')
 

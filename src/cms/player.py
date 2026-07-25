@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import subprocess
 import threading
 import time
@@ -10,6 +11,8 @@ from collections.abc import Sequence
 from .channels import StreamQuality
 from .config import CMSConfig
 from .tiling import VLC_DELAY_MS
+
+log = logging.getLogger(__name__)
 
 
 class CMSPlayer:
@@ -30,7 +33,7 @@ class CMSPlayer:
         self.stream_quality: StreamQuality = config.default_quality
         self._active_channels: list[int] = []
         self._processes: list[subprocess.Popen] = []
-
+        log.debug('CMSPlayer init — quality=%s default_group=%s', self.stream_quality, config.default_group_name)
         self.open_group(self.config.default_group_name)
 
     # ------------------------------------------------------------------ #
@@ -55,11 +58,13 @@ class CMSPlayer:
                 '--qt-minimal-view',     # hide control bar / scrubber
                 '--no-video-title-show', # suppress OSD title overlay
             ]
+        log.debug('Launching VLC for channel %d: %s', channel, url)
         proc = subprocess.Popen(cmd)
         self._processes.append(proc)
 
     def open_and_tile_channels(self, channels: Sequence[int], tile: bool = True) -> None:
         """Launch VLC for every channel in *channels* and record them as active."""
+        log.debug('open_and_tile_channels: channels=%s tile=%s', list(channels), tile)
         self._active_channels = list(channels)
         for ch in channels:
             self.open_channel(ch)
@@ -76,11 +81,13 @@ class CMSPlayer:
         Raises:
             KeyError: If *group* is not a known group name.
         """
+        log.debug('open_group: %r', group)
         channels = self.config.channel_groups[group.lower()]
         self.open_and_tile_channels(channels)
 
     def reload(self) -> None:
         """Close all VLC windows and reopen the active channels."""
+        log.debug('reload: active_channels=%s', self._active_channels)
         self.close_all()
         self.open_and_tile_channels(self._active_channels)
 
@@ -90,19 +97,23 @@ class CMSPlayer:
 
     def set_quality(self, quality: StreamQuality) -> None:
         """Set the stream quality. Does *not* reload automatically."""
+        log.debug('set_quality: %s', quality)
         self.stream_quality = quality
 
     def upgrade_quality(self) -> None:
         """Switch to the main (high-quality) stream."""
+        log.debug('upgrade_quality → HIGH')
         self.stream_quality = StreamQuality.HIGH
 
     def downgrade_quality(self) -> None:
         """Switch to the sub (low-quality) stream."""
+        log.debug('downgrade_quality → LOW')
         self.stream_quality = StreamQuality.LOW
 
     def toggle_quality(self) -> None:
         """Toggle between HIGH and LOW quality."""
         self.stream_quality = self.stream_quality.toggled()
+        log.debug('toggle_quality → %s', self.stream_quality)
 
     # ------------------------------------------------------------------ #
     # Lifecycle
@@ -110,6 +121,7 @@ class CMSPlayer:
 
     def close_all(self) -> None:
         """Terminate all running VLC processes."""
+        log.debug('close_all: terminating %d process(es)', len(self._processes))
         for proc in self._processes:
             if proc.poll() is None:
                 proc.terminate()

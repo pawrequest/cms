@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import logging
 import math
 import tkinter as tk
 from tkinter import font as tkfont
 
 from .channels import StreamQuality
-from .config import CMSConfig, default_config
+from .config import CMSConfig, default_config, setup_logging
 from .player import CMSPlayer
+
+log = logging.getLogger(__name__)
 
 # ─── Catppuccin-inspired dark palette ────────────────────────────────────────
 BG = '#1e1e2e'
@@ -60,6 +63,7 @@ class CMSApp(tk.Tk):
         self.configure(bg=BG)
         self.resizable(False, False)
 
+        log.debug('CMSApp init — config=%s', config.path if config else None)
         self.player = CMSPlayer(config)
         self._selected: set[int] = set()
         self._chan_btns: dict[int, tk.Button] = {}
@@ -311,6 +315,15 @@ class CMSApp(tk.Tk):
             width=10,
         ).pack(side='left')
 
+    def _rebuild_ui(self) -> None:
+        """Destroy every child widget and rebuild the UI from the current config."""
+        for widget in self.winfo_children():
+            widget.destroy()
+        self._selected = set()
+        self._chan_btns = {}
+        self._quality_var_i = tk.IntVar(value=self.player.stream_quality.value)
+        self._build_ui()
+
     # ------------------------------------------------------------------ #
     # Interactivity
     # ------------------------------------------------------------------ #
@@ -404,11 +417,7 @@ class CMSApp(tk.Tk):
             self._set_status(f'Failed to load config: {exc}')
             return
         self.player.config = new_cfg
-        # Refresh settings fields
-        self._cfg_lbl.configure(text=new_path.name)
-        self._host_var.set(new_cfg.rtsp_host or '')
-        self._user_var.set(new_cfg.rtsp_user or '')
-        self._pass_var.set(new_cfg.rtsp_pass or '')
+        self._rebuild_ui()
         self._set_status(f'Config replaced: {new_path.name}')
 
     def _set_status(self, msg: str) -> None:
@@ -445,6 +454,7 @@ class CMSApp(tk.Tk):
         if not channels:
             self._set_status('No channels to open.')
             return
+        log.debug('_launch: channels=%s quality=%s', channels, self.player.stream_quality)
         self.player.close_all()
         self.player.open_and_tile_channels(channels)
         self._highlight_channels(channels)
@@ -469,6 +479,7 @@ class CMSApp(tk.Tk):
         self._set_status('All streams closed.')
 
     def _on_close(self) -> None:
+        log.debug('Window closed — shutting down player')
         self.player.close_all()
         self.destroy()
 
@@ -495,6 +506,8 @@ def run_gui(config: CMSConfig | None = None) -> None:
                 os.environ[env_var] = candidate
 
     config = config or default_config()
+    setup_logging(config.debug)
+    log.debug('run_gui: debug=%s config=%s', config.debug, config.path)
     app = CMSApp(config)
     app.mainloop()
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import tomllib
 from dataclasses import dataclass, field
@@ -53,6 +54,9 @@ class CMSConfig:
     # storage
     path: Path | None = None
 
+    # Debug / logging
+    debug: bool = True
+
     # ------------------------------------------------------------------ #
     def build_url(
             self,
@@ -85,6 +89,39 @@ class CMSConfig:
         data['path'] = tomlfile
 
         return cls(**data)
+
+
+#
+# def default_config() -> CMSConfig:
+#     return CMSConfig.from_toml(Path(r'D:\prdev\tools\cms\default_conf.toml'))
+
+
+_PROJECT_ROOT = Path(__file__).parent.parent.parent  # src/cms -> src -> project root
+
+
+def setup_logging(debug: bool = True) -> None:
+    """Configure the root *cms* logger.
+
+    When *debug* is ``True`` the level is set to ``DEBUG`` and a simple
+    timestamped handler is attached (idempotent — safe to call multiple times).
+    When *debug* is ``False`` logging is effectively silenced at ``WARNING``
+    level so nothing appears in normal use.
+    """
+    logger = logging.getLogger('cms')
+    if logger.handlers:
+        # Already configured — just update the level.
+        logger.setLevel(logging.DEBUG if debug else logging.WARNING)
+        return
+
+    level = logging.DEBUG if debug else logging.WARNING
+    logger.setLevel(level)
+
+    handler = logging.StreamHandler()
+    handler.setLevel(level)
+    fmt = logging.Formatter('[%(asctime)s] %(levelname)-8s %(name)s — %(message)s',
+                            datefmt='%H:%M:%S')
+    handler.setFormatter(fmt)
+    logger.addHandler(handler)
 
 
 def default_config() -> CMSConfig:
