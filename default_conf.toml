@@ -12,13 +12,14 @@ rtp_caching = 100
 default_quality = "HIGH"
 default_codec = "H264"
 
+max_channel = 16 # if no channels provided we have this many numbered channels
+initial_group_name = "doors"
+
 [channels] # optional
 1 = "front"
 2 = "back"
 
-max_channel = 16 # if no channels provided we have this many numbered channels
-
 [channel_groups]
 doors = [1, 2]
 
-initial_group_name = "doors"
+
