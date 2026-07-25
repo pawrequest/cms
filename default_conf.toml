@@ -9,6 +9,7 @@ default_group_name = "doors"
 max_channel = 16
 
 vlc_path = 'C:\Program Files (x86)\VideoLAN\VLC\vlc.exe'
+minimal_view = true   # hide VLC controls/menu bar (--qt-minimal-view)
 
 rtp_caching = 100
 default_quality = "HIGH"
