@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
+import tomllib
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from .channels import StreamQuality
 
@@ -49,9 +51,9 @@ class CMSConfig:
 
     # ------------------------------------------------------------------ #
     def build_url(
-        self,
-        channel: int,
-        quality: StreamQuality | None = None,
+            self,
+            channel: int,
+            quality: StreamQuality | None = None,
     ) -> str:
         """Return a URL for *channel*.
 
@@ -66,6 +68,22 @@ class CMSConfig:
             f'&channel={channel}&stream={s}.sdp'
             f'?real_stream--rtp-caching={self.rtp_caching}'
         )
+
+    @classmethod
+    def from_toml(cls, tomlfile: Path) -> CMSConfig:
+        """Load configuration from a TOML file."""
+        with open(tomlfile, 'rb') as f:
+            data = tomllib.load(f)
+
+        if 'default_quality' in data:
+            data['default_quality'] = StreamQuality[data['default_quality']]
+
+        return cls(**data)
+
+
+# def cms_config_toml_1() -> CMSConfig:
+#     with open
+#     ...
 
 
 def cms_config_1() -> CMSConfig:
