@@ -202,8 +202,6 @@ def main(channels, quality, host, gui, config_path) -> None:
 
     Open RTSP camera feeds in VLC from the terminal or a simple GUI.
 
-    variables (set them before launching, as with cms.ps1).
-
     \b
     Examples:
       cms                         # start with default group (doors), interactive UI
