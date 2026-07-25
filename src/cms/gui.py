@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import font as tkfont
 
 from .channels import StreamQuality
-from .config import CMSConfig, cms_config_1
+from .config import CMSConfig, default_config
 from .player import CMSPlayer
 
 # ─── Catppuccin-inspired dark palette ────────────────────────────────────────
@@ -174,13 +174,7 @@ class CMSApp(tk.Tk):
         return outer
 
     def _build_settings(self) -> None:
-        """Collapsible settings panel.
-
-        Credentials (RTSP_USER / RTSP_PASS) are intentionally read-only from
-        the environment — set them via ``$env:RTSP_USER`` / ``$env:RTSP_PASS``
-        before launching, matching the cms.ps1 behaviour.
-        Only the host address is editable here.
-        """
+        """Collapsible settings panel for host and credentials."""
         self._settings_visible = False
         toggle_btn = tk.Button(
             self,
@@ -198,42 +192,63 @@ class CMSApp(tk.Tk):
         self._settings_frame = tk.Frame(self, bg=BG)
         small = tkfont.Font(family='Segoe UI', size=9)
 
-        # ── Host (editable) ───────────────────────────────────────────
-        tk.Label(
-            self._settings_frame,
-            text='Host:',
-            bg=BG,
-            fg=SUBTEXT,
-            font=small,
-            width=10,
-            anchor='e',
-        ).grid(row=0, column=0, padx=(8, 4), pady=3)
+        def _label(text: str, row: int) -> None:
+            tk.Label(
+                self._settings_frame,
+                text=text,
+                bg=BG,
+                fg=SUBTEXT,
+                font=small,
+                width=10,
+                anchor='e',
+            ).grid(row=row, column=0, padx=(8, 4), pady=3)
 
+        def _entry(var: tk.StringVar, row: int, **kw) -> tk.Entry:
+            e = tk.Entry(
+                self._settings_frame,
+                textvariable=var,
+                width=24,
+                bg=SURFACE,
+                fg=TEXT,
+                insertbackground=TEXT,
+                relief='flat',
+                font=small,
+                **kw,
+            )
+            e.grid(row=row, column=1, padx=(0, 8), pady=3)
+            return e
+
+        # ── Host ──────────────────────────────────────────────────────
+        _label('Host:', 0)
         self._host_var = tk.StringVar(value=self.player.config.rtsp_host)
-        tk.Entry(
-            self._settings_frame,
-            textvariable=self._host_var,
-            width=24,
-            bg=SURFACE,
-            fg=TEXT,
-            insertbackground=TEXT,
-            relief='flat',
-            font=small,
-        ).grid(row=0, column=1, padx=(0, 8), pady=3)
+        _entry(self._host_var, 0)
 
-        # ── Credentials (read-only, sourced from env) ─────────────────
-        env_note = 'Credentials are read from RTSP_USER / RTSP_PASS env vars.'
+        # ── Username ──────────────────────────────────────────────────
+        _label('Username:', 1)
+        self._user_var = tk.StringVar(value=self.player.config.rtsp_user or '')
+        _entry(self._user_var, 1)
+
+        # ── Password ──────────────────────────────────────────────────
+        _label('Password:', 2)
+        self._pass_var = tk.StringVar(value=self.player.config.rtsp_pass or '')
+        _entry(self._pass_var, 2, show='•')
+
+        # ── Hint ──────────────────────────────────────────────────────
         tk.Label(
             self._settings_frame,
-            text=env_note,
+            text='Leave username/password blank to keep existing credentials.',
             bg=BG,
-            fg=SUBTEXT,
+            fg=OVERLAY,
             font=tkfont.Font(family='Segoe UI', size=8, slant='italic'),
             wraplength=240,
-        ).grid(row=1, column=0, columnspan=2, padx=8, pady=(2, 4))
+        ).grid(row=3, column=0, columnspan=2, padx=8, pady=(0, 2))
+
+        # ── Buttons row ───────────────────────────────────────────────
+        btn_row = tk.Frame(self._settings_frame, bg=BG)
+        btn_row.grid(row=4, column=0, columnspan=2, pady=(4, 8))
 
         tk.Button(
-            self._settings_frame,
+            btn_row,
             text='Apply',
             command=self._apply_settings,
             bg=MAUVE,
@@ -243,7 +258,21 @@ class CMSApp(tk.Tk):
             cursor='hand2',
             font=tkfont.Font(family='Segoe UI', size=9, weight='bold'),
             width=8,
-        ).grid(row=2, column=0, columnspan=2, pady=(4, 8))
+        ).pack(side='left', padx=(0, 6))
+
+        tk.Button(
+            btn_row,
+            text='↺  From env',
+            command=self._reload_creds_from_env,
+            bg=SURFACE,
+            fg=SUBTEXT,
+            activebackground=OVERLAY,
+            activeforeground=TEXT,
+            relief='flat',
+            cursor='hand2',
+            font=tkfont.Font(family='Segoe UI', size=9),
+            width=10,
+        ).pack(side='left')
 
     # ------------------------------------------------------------------ #
     # Interactivity
@@ -258,7 +287,25 @@ class CMSApp(tk.Tk):
 
     def _apply_settings(self) -> None:
         self.player.config.rtsp_host = self._host_var.get().strip()
+        # Only overwrite credentials if the user actually typed something.
+        user = self._user_var.get().strip()
+        if user:
+            self.player.config.rtsp_user = user
+        passwd = self._pass_var.get()
+        if passwd:
+            self.player.config.rtsp_pass = passwd
         self._set_status('Settings applied.')
+
+    def _reload_creds_from_env(self) -> None:
+        """Pull RTSP_USER / RTSP_PASS from environment and refresh fields + config."""
+        import os
+        user = os.getenv('RTSP_USER', '')
+        passwd = os.getenv('RTSP_PASS', '')
+        self._user_var.set(user)
+        self._pass_var.set(passwd)
+        self.player.config.rtsp_user = user or self.player.config.rtsp_user
+        self.player.config.rtsp_pass = passwd or self.player.config.rtsp_pass
+        self._set_status('Credentials reloaded from environment.')
 
     def _set_status(self, msg: str) -> None:
         self._status_var.set(msg)
@@ -343,7 +390,7 @@ def run_gui(config: CMSConfig | None = None) -> None:
             if os.path.isdir(candidate):
                 os.environ[env_var] = candidate
 
-    config = config or cms_config_1()
+    config = config or default_config()
     app = CMSApp(config)
     app.mainloop()
 
