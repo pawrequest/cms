@@ -28,13 +28,8 @@ QUALITY_STYLE = {
     StreamQuality.LOW: '[bold yellow]LOW[/bold yellow]',
 }
 
-GROUP_SHORTCUTS: dict[str, str] = {
-    'd': 'doors',
-    'f': 'front',
-    'm': 'main',
-    'o': 'office',
-    'a': 'all',
-}
+# Keys permanently reserved for built-in commands.
+_RESERVED_KEYS: frozenset[str] = frozenset({'r', 'q'})
 
 
 def _parse_channels(text: str) -> list[int]:
@@ -44,15 +39,45 @@ def _parse_channels(text: str) -> list[int]:
     return result
 
 
-def _print_status(player: CMSPlayer) -> None:
+def _build_group_shortcuts(config: CMSConfig) -> dict[str, str]:
+    """Return a mapping of *single letter → group key* derived from the config.
+
+    For each group the first unused letter in its name (that is not a reserved
+    command key) is chosen as the shortcut.  Groups that cannot be assigned a
+    unique letter are skipped with a warning.
+    """
+    shortcuts: dict[str, str] = {}  # letter → group key
+    used: set[str] = set(_RESERVED_KEYS)
+
+    for group_key in config.channel_groups:
+        assigned = False
+        for ch in group_key.lower():
+            if ch.isalpha() and ch not in used:
+                shortcuts[ch] = group_key
+                used.add(ch)
+                assigned = True
+                break
+        if not assigned:
+            log.warning(
+                'Could not assign a unique shortcut for group %r — '
+                'all letters are taken or reserved.',
+                group_key,
+            )
+
+    log.debug('Group shortcuts: %s', shortcuts)
+    return shortcuts
+
+
+def _print_status(player: CMSPlayer, group_shortcuts: dict[str, str]) -> None:
+    """Render the current status panel and the help table."""
     channels_map = player.config.channels  # dict[int, str], may be empty
     if channels_map:
         channels_str = (
-            ', '.join(
-                f'{c} · {channels_map[c]}' if c in channels_map else str(c)
-                for c in player.active_channels
-            )
-            or '[dim]none[/dim]'
+                ', '.join(
+                    f'{c} · {channels_map[c]}' if c in channels_map else str(c)
+                    for c in player.active_channels
+                )
+                or '[dim]none[/dim]'
         )
     else:
         channels_str = ', '.join(str(c) for c in player.active_channels) or '[dim]none[/dim]'
@@ -69,22 +94,20 @@ def _print_status(player: CMSPlayer) -> None:
     tbl = Table(box=box.SIMPLE, show_header=False, padding=(0, 1))
     tbl.add_column('key', style='bold cyan', min_width=12, no_wrap=True)
     tbl.add_column('action', style='white')
-    rows = [
-        ('[d]', 'doors channels'),
-        ('[f]', 'front channels'),
-        ('[m]', 'main channel'),
-        ('[o]', 'office channels'),
-        ('[a]', 'all channels'),
-        ('[1 2 …]', 'open specific channel numbers (space or comma separated)'),
-        ('[r]', 'reload — close & reopen current channels'),
-        # ("[w]",      "tile VLC windows into a grid"),
-        ('[u]', 'upgrade to HIGH quality stream  (reloads)'),
-        ('[y]', 'downgrade to LOW  quality stream (reloads)'),
-        ('[t]', 'toggle quality                  (reloads)'),
-        ('[Enter]', 'close VLC and exit'),
-    ]
-    for key, action in rows:
-        tbl.add_row(key, action)
+
+    # ── Dynamic group rows ────────────────────────────────────────────────
+    for letter, group_key in sorted(group_shortcuts.items()):
+        group_title = group_key.title()
+        channels = player.config.channel_groups[group_key]
+        ch_hint = ', '.join(str(c) for c in channels)
+        tbl.add_row(f'\\[{letter}]', f'{group_title} channels  [dim]({ch_hint})[/dim]')
+
+    # ── Static rows ───────────────────────────────────────────────────────
+    tbl.add_row('\\[1 2 …]', 'open specific channel numbers (space or comma separated)')
+    tbl.add_row('\\[r]', 'reload — close & reopen current channels')
+    tbl.add_row('\\[q]', f'toggle quality from {QUALITY_STYLE[player.stream_quality]}             (reloads)')
+    tbl.add_row('\\[Enter]', 'close VLC and exit')
+
     console.print(tbl)
 
 
@@ -96,9 +119,13 @@ def _print_status(player: CMSPlayer) -> None:
 def ui_loop(player: CMSPlayer) -> None:
     """Blocking interactive loop. Exits when the user presses Enter."""
     log.debug('Entering ui_loop; active_channels=%s', player.active_channels)
+
+    # Build shortcuts once (config does not change during a session).
+    group_shortcuts = _build_group_shortcuts(player.config)
+
     while True:
         console.print()
-        _print_status(player)
+        _print_status(player, group_shortcuts)
 
         try:
             raw = console.input('\n[bold cyan]>[/bold cyan] ').strip()
@@ -121,31 +148,25 @@ def ui_loop(player: CMSPlayer) -> None:
             console.print('[blue]Reloading…[/blue]')
             log.debug('Reloading channels: %s', player.active_channels)
             player.reload()
+            player.tiler.tile()
 
-        # elif cmd == "w":
-        #     console.print("[blue]Tiling windows…[/blue]")
-        #     ok = player.tile_windows()
-        #     if not ok:
-        #         console.print("[yellow]No VLC windows found to tile.[/yellow]")
-
-        elif cmd in ('u', 'y', 't'):
-            if cmd == 'u':
-                player.upgrade_quality()
-            elif cmd == 'y':
-                player.downgrade_quality()
-            else:
-                player.toggle_quality()
+        elif cmd == 'q':
+            player.toggle_quality()
             label = QUALITY_STYLE[player.stream_quality]
             log.debug('Quality changed to %s — reloading', player.stream_quality)
             console.print(f'Quality → {label}  — reloading…')
             player.reload()
+            player.tiler.tile()
 
-        elif cmd in GROUP_SHORTCUTS:
-            group = GROUP_SHORTCUTS[cmd]
-            log.debug('Opening group %r', group)
-            console.print(f'[blue]Opening group [bold]{group}[/bold]…[/blue]')
+        elif cmd in group_shortcuts:
+            group_key = group_shortcuts[cmd]
+            group_title = group_key.title()
+            log.debug('Opening group %r', group_key)
+            console.print(f'[blue]Opening group [bold]{group_title}[/bold]…[/blue]')
             player.close_all()
-            player.open_group(group)
+            player.open_group(group_key)
+            player.tiler.tile()
+
 
         else:
             # Try to parse as channel numbers
@@ -156,7 +177,6 @@ def ui_loop(player: CMSPlayer) -> None:
                 player.close_all()
                 player.open_channels(nums)
                 player.tiler.tile()
-
             else:
                 log.debug('Unknown command: %r', raw)
                 console.print(
@@ -206,7 +226,7 @@ def main(channels, quality, host, gui, config_path) -> None:
 
     \b
     Examples:
-      cms                         # start with default group (doors), interactive UI
+      cms                         # start with default group (if configured), interactive UI
       cms --channels 1,4,8        # open specific cameras
       cms --quality high          # start in high-quality mode
       cms --gui                   # launch the graphical interface
@@ -235,8 +255,9 @@ def main(channels, quality, host, gui, config_path) -> None:
     log.debug('CMSPlayer created; default group=%s', config.initial_group_name)
 
     if config.initial_group_name and config.channel_groups:
+        console.print(f'[blue]Opening default group [bold]{config.initial_group_name.title()}[/bold]…[/blue]')
         player.open_group(config.initial_group_name)
-        console.print(f'[blue]Opening default group [bold]{config.initial_group_name}[/bold]…[/blue]')
+        player.tiler.tile()
 
     elif channels:
         nums = _parse_channels(channels)
@@ -247,4 +268,5 @@ def main(channels, quality, host, gui, config_path) -> None:
             console.print('[blue]Tiling…[/blue]')
         else:
             console.print('[red]No valid channel numbers in --channels.[/red]')
+
     ui_loop(player)
