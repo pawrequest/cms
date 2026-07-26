@@ -6,6 +6,7 @@ import logging
 import math
 import tkinter as tk
 from functools import lru_cache
+from pathlib import Path
 from tkinter import font as tkfont
 
 from .channels import StreamQuality
@@ -66,7 +67,7 @@ class CMSApp(tk.Tk):
         self.configure(bg=BG)
         self.resizable(True, True)
 
-        log.debug('CMSApp init — config=%s', config.path if config else None)
+        log.debug('CMSApp init — config=%s', config.config_toml if config else None)
         self.player = CMSPlayer(config)
         # self.player.tiler.pin_hwnd(self.winfo_id())  # include main window in tiling
 
@@ -78,7 +79,7 @@ class CMSApp(tk.Tk):
         self.protocol('WM_DELETE_WINDOW', self._on_close)
         if self.player.config.initial_group:
             self.launch(self.player.config.initial_group)
-        # self.hwnd = self.winfo_id()
+        self.hwnd = self.winfo_id()
 
         # ------------------------------------------------------------------ #
 
@@ -270,7 +271,7 @@ class CMSApp(tk.Tk):
 
         # ── Config file (click for context menu) ─────────────────────
         _label('Config file:', 0)
-        cfg_path = self.player.config.path
+        cfg_path = self.player.config.config_toml
         cfg_name = cfg_path.name if cfg_path else '—'
         self._cfg_lbl = tk.Label(
             self._settings_frame,
@@ -391,7 +392,7 @@ class CMSApp(tk.Tk):
             activebackground=OVERLAY, activeforeground=TEXT,
             relief='flat', bd=0
         )
-        cfg_path = self.player.config.path
+        cfg_path = self.player.config.config_toml
         menu.add_command(
             label='Open file',
             state='normal' if cfg_path else 'disabled',
@@ -409,14 +410,14 @@ class CMSApp(tk.Tk):
     def _cfg_open_file(self) -> None:
         """Open the config TOML in the system default text editor."""
         import os
-        path = self.player.config.path
+        path = self.player.config.config_toml
         if path:
             os.startfile(str(path))
 
     def _cfg_open_path(self) -> None:
         """Reveal the config file's parent directory in Windows Explorer."""
         import subprocess
-        path = self.player.config.path
+        path = self.player.config.config_toml
         if path:
             subprocess.Popen(['explorer', str(path.parent)])
 
@@ -424,7 +425,7 @@ class CMSApp(tk.Tk):
         """Let the user pick a new TOML file and hot-reload the config."""
         from tkinter import filedialog
         from .config import CMSConfig
-        current = self.player.config.path
+        current = self.player.config.config_toml
         initial_dir = str(current.parent) if current else '/'
         new_path_str = filedialog.askopenfilename(
             parent=self,
@@ -434,7 +435,6 @@ class CMSApp(tk.Tk):
         )
         if not new_path_str:
             return  # user cancelled
-        from pathlib import Path
         new_path = Path(new_path_str)
         try:
             new_cfg = CMSConfig.from_toml(new_path)
@@ -483,6 +483,8 @@ class CMSApp(tk.Tk):
         """if should tile the gui, then return our hwnd"""
         if not should_tile_gui(num_channels):
             return []
+
+        return [self.hwnd]
         # winfo_id() returns Tk's internal child-frame HWND on Windows.
         # We must walk up to the real decorated top-level window via GetParent.
         import ctypes
@@ -553,7 +555,7 @@ def run_gui(config: CMSConfig | None = None) -> None:
 
     config = config or default_config()
     setup_logging(config.debug)
-    log.debug('run_gui: debug=%s config=%s', config.debug, config.path)
+    log.debug('run_gui: debug=%s config=%s', config.debug, config.config_toml)
     app = CMSApp(config)
     app.mainloop()
 

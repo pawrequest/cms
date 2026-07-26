@@ -233,7 +233,7 @@ def main(channels, quality, host, gui, config_path) -> None:
     """
     config = CMSConfig.from_toml(config_path) if config_path else default_config()
     setup_logging(config.debug)
-    log.debug('Config loaded: path=%s debug=%s host=%s', config.path, config.debug, config.rtsp_host)
+    log.debug('Config loaded: path=%s debug=%s host=%s', config.config_toml, config.debug, config.rtsp_host)
 
     if quality:
         config.default_quality = (

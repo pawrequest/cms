@@ -27,7 +27,7 @@ def _grid(n: int) -> tuple[int, int]:
 # Grid layout
 # ------------------------------------------------------------------ #
 
-def tile_hwnds(hwnds: list[int]) -> bool:
+def tile_hwnds(hwnds: set[int]) -> bool:
     """Arrange *hwnds* in a grid that fills the work area.
 
     Returns ``True`` if at least one window was positioned.
@@ -64,7 +64,7 @@ def tile_windows(pids: set[int], timeout: float = 5.0, extra_hwnds: list[int] | 
     Polls until every expected window is visible or *timeout* seconds elapse.
     Returns True if at least one window was tiled.
     """
-    if sys.platform != 'win32' or not pids:
+    if sys.platform != 'win32':
         return False
 
     user32 = ctypes.windll.user32
@@ -92,9 +92,9 @@ def tile_windows(pids: set[int], timeout: float = 5.0, extra_hwnds: list[int] | 
         return found
 
     deadline = time.monotonic() + timeout
-    hwnds = list(extra_hwnds) if extra_hwnds else []
+    hwnds = set(extra_hwnds) if extra_hwnds else set()
     while time.monotonic() < deadline:
-        hwnds.extend(_find())
+        hwnds.update(_find())
         if len(hwnds) >= len(pids):
             break
         time.sleep(0.25)

@@ -13,15 +13,6 @@ from .channels import StreamQuality
 
 @dataclass
 class CMSConfig:
-    """All configuration needed to connect to an RTSP camera system and launch VLC.
-
-    Values are resolved from environment variables at instantiation time, so you
-    can override any of them afterwards::
-
-        cfg = CMSConfig()
-        cfg.rtsp_host = "192.168.2.10"
-    """
-
     # RTSP credentials / address
     rtsp_user: str = field(default_factory=lambda: os.getenv('RTSP_USER'))
     rtsp_pass: str = field(default_factory=lambda: os.getenv('RTSP_PASS'))
@@ -29,9 +20,9 @@ class CMSConfig:
     rtsp_port: int = 554
 
     # Channels
-    channels: dict[int, str] = field(default_factory=dict[int, str])
+    channels: dict[int, str] = field(default_factory=dict)
     max_channel: int = 16
-    channel_groups: dict[str, list[int]] = field(default_factory=dict[str, list[int]])
+    channel_groups: dict[str, list[int]] = field(default_factory=dict)
     initial_group_name: str = ''
 
     def __post_init__(self):
@@ -45,8 +36,8 @@ class CMSConfig:
     @property
     def initial_group(self) -> list[int]:
         return self.channel_groups[self.initial_group_name] if self.initial_group_name \
-            else list(self.channels.keys())[0] if self.channels \
-            else []
+            else list(self.channels.values())[0] if self.channels \
+            else self.all_channels
 
     # VLC
     vlc_path: str = field(
@@ -61,31 +52,52 @@ class CMSConfig:
     default_quality: StreamQuality = StreamQuality.HIGH
     default_codec: str = 'H264'
 
-    # storage
-    path: Path | None = None
+    config_toml: Path | None = None
 
     # Debug / logging
     debug: bool = True
 
-    # ------------------------------------------------------------------ #
-    def build_url(
-            self,
-            channel: int,
-            quality: StreamQuality | None = None,
-    ) -> str:
-        """Return a URL for *channel*.
-
-        Args:
-            channel: Camera channel number (1-based).
-            quality: Stream quality. Falls back to :attr:`default_quality` when *None*.
-        """
-        s = self.default_quality.value if quality is None else quality.value
-        return (
-            f'rtsp://{self.rtsp_host}:{self.rtsp_port}'
-            f'/user={self.rtsp_user}&password={self.rtsp_pass}'
-            f'&channel={channel}&stream={s}.sdp'
-            f'?real_stream--rtp-caching={self.rtp_caching}'
+    url_template: str = field(
+        default_factory=lambda: (
+            "rtsp://{rtsp_host}:{rtsp_port}"
+            "/user={rtsp_user}&password={rtsp_pass}"
+            "&channel={channel}&stream={stream}.sdp"
+            "?real_stream--rtp-caching={rtp_caching}"
         )
+    )
+
+    def build_url(self, channel: int, quality: StreamQuality | None = None) -> str:
+        s = (self.default_quality if quality is None else quality).value
+        return self.url_template.format_map(
+            {
+                'rtsp_host': self.rtsp_host,
+                'rtsp_port': self.rtsp_port,
+                'rtsp_user': self.rtsp_user,
+                'rtsp_pass': self.rtsp_pass,
+                'channel': channel,
+                'stream': s,
+                'rtp_caching': self.rtp_caching,
+            }
+        )
+
+    # def build_url1(
+    #         self,
+    #         channel: int,
+    #         quality: StreamQuality | None = None,
+    # ) -> str:
+    #     """Return a URL for *channel*.
+    #
+    #     Args:
+    #         channel: Camera channel number (1-based).
+    #         quality: Stream quality. Falls back to :attr:`default_quality` when *None*.
+    #     """
+    #     s = self.default_quality.value if quality is None else quality.value
+    #     return (
+    #         f'rtsp://{self.rtsp_host}:{self.rtsp_port}'
+    #         f'/user={self.rtsp_user}&password={self.rtsp_pass}'
+    #         f'&channel={channel}&stream={s}.sdp'
+    #         f'?real_stream--rtp-caching={self.rtp_caching}'
+    #     )
 
     @classmethod
     def from_toml(cls, tomlfile: Path) -> CMSConfig:
@@ -99,7 +111,7 @@ class CMSConfig:
         if 'channels' in data:
             data['channels'] = {int(k): v for k, v in data['channels'].items()}
 
-        data['path'] = tomlfile
+        data['config_toml'] = tomlfile
 
         return cls(**data)
 
