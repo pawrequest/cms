@@ -58,8 +58,8 @@ def tile_hwnds(hwnds: set[int]) -> bool:
     return True
 
 
-def tile_windows(pids: set[int], timeout: float = 5.0, extra_hwnds: list[int] | None = None) -> bool:
-    """Find windows owned by *pids* and arrange them in a grid.
+def tile_windows(pids: set[int], hwnds: list[int] | None = None, timeout: float = 5.0) -> bool:
+    """Find windows owned by *pids* and arrange themwith *hwnds* in a grid.
 
     Polls until every expected window is visible or *timeout* seconds elapse.
     Returns True if at least one window was tiled.
@@ -92,14 +92,14 @@ def tile_windows(pids: set[int], timeout: float = 5.0, extra_hwnds: list[int] | 
         return found
 
     deadline = time.monotonic() + timeout
-    hwnds = set(extra_hwnds) if extra_hwnds else set()
+    found_hwnds = set(hwnds) if hwnds else set()
     while time.monotonic() < deadline:
-        hwnds.update(_find())
-        if len(hwnds) >= len(pids):
+        found_hwnds.update(_find())
+        if len(found_hwnds) >= len(pids) + (len(hwnds) if hwnds else 0):
             break
         time.sleep(0.25)
 
-    return tile_hwnds(hwnds)
+    return tile_hwnds(found_hwnds)
 
 
 # ------------------------------------------------------------------ #
@@ -118,21 +118,18 @@ class Tiler:
         tiler.tile()   # call after launching channels
     """
 
-    def __init__(self, procs: list[Popen], pinned_hwnds: set[int] = None) -> None:
-        self._procs = procs  # shared reference — owned by CMSPlayer
-        self.pinned_hwnds = set(pinned_hwnds) if pinned_hwnds is not None else set()
+    def __init__(self, procs: list[Popen], hwnds: set[int] = None) -> None:
+        self._procs = procs
+        self._hwnds = set(hwnds) if hwnds is not None else set()
 
     def pin_hwnd(self, hwnd: int) -> None:
         """Add a window handle to the pinned set, which is tiled along with
         the windows owned by the managed processes."""
-        self.pinned_hwnds.add(hwnd)
+        self._hwnds.add(hwnd)
 
     # ------------------------------------------------------------------ #
     # Tiling
     # ------------------------------------------------------------------ #
-
-    def add_self(self):
-        self.pinned_hwnds.add(ctypes.windll.user32.GetForegroundWindow())
 
     def tile(self, timeout: float = 5.0, *, delay_ms: float = VLC_DELAY_MS, extra_hwnds: list[int] = None) -> None:
         """Arrange all managed windows in a grid.
@@ -155,6 +152,6 @@ class Tiler:
             if delay_ms:
                 time.sleep(delay)
                 # time.sleep(delay_ms / 1000)
-            tile_windows(pids, timeout=timeout, extra_hwnds=extra_hwnds)
+            tile_windows(pids, hwnds=extra_hwnds, timeout=timeout)
 
         threading.Thread(target=_run, daemon=True).start()
