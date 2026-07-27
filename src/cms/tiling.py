@@ -32,6 +32,9 @@ def tile_hwnds(hwnds: set[int]) -> bool:
 
     Returns ``True`` if at least one window was positioned.
     """
+
+    log.debug('Tiler.tile: hwnds=%s', hwnds)
+
     if sys.platform != 'win32' or not hwnds:
         return False
 
@@ -145,7 +148,6 @@ class Tiler:
         """
         # Snapshot PIDs now; the list may change if close_all is called.
         pids = {p.pid for p in self._procs if p.poll() is None}
-        log.debug('Tiler.tile: pids=%s delay_ms=%s', pids, delay_ms)
 
         delay = len(pids) * 0.3
         delay = max(delay, VLC_DELAY_MS / 1000)
