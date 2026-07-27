@@ -27,6 +27,7 @@ def _grid(n: int) -> tuple[int, int]:
 # Grid layout
 # ------------------------------------------------------------------ #
 
+
 def tile_hwnds(hwnds: set[int]) -> bool:
     """Arrange *hwnds* in a grid that fills the work area.
 
@@ -71,9 +72,7 @@ def tile_windows(pids: set[int], timeout: float = 5.0, extra_hwnds: list[int] | 
         return False
 
     user32 = ctypes.windll.user32
-    EnumWindowsProc = ctypes.WINFUNCTYPE(
-        ctypes.c_bool, ctypes.wintypes.HWND, ctypes.wintypes.LPARAM
-    )
+    EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.wintypes.HWND, ctypes.wintypes.LPARAM)
 
     def _find() -> list[int]:
         found: list[int] = []
@@ -108,6 +107,7 @@ def tile_windows(pids: set[int], timeout: float = 5.0, extra_hwnds: list[int] | 
 # ------------------------------------------------------------------ #
 # Tiler class
 # ------------------------------------------------------------------ #
+
 
 class Tiler:
     """Derives window positions from a shared process list and tiles them.

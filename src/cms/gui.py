@@ -174,9 +174,7 @@ class CMSApp(tk.Tk):
         q_frame = tk.Frame(self, bg=BG)
         q_frame.pack(pady=(2, 6))
 
-        tk.Label(q_frame, text='Stream quality:', bg=BG, fg=TEXT, font=base_font).pack(
-            side='left', padx=(0, 8)
-        )
+        tk.Label(q_frame, text='Stream quality:', bg=BG, fg=TEXT, font=base_font).pack(side='left', padx=(0, 8))
 
         qual_tupes = [
             (StreamQuality.HIGH.label(), StreamQuality.HIGH.value, GREEN),
@@ -205,9 +203,7 @@ class CMSApp(tk.Tk):
             ('✕  Close All', self._close_all, RED),
         ]
         for text, cmd, color in actions:
-            _btn(act_frame, text, command=cmd, fg=color, font=bold_font, width=16).pack(
-                side='left', padx=6
-            )
+            _btn(act_frame, text, command=cmd, fg=color, font=bold_font, width=16).pack(side='left', padx=6)
 
         # ── Settings (collapsible) ─────────────────────────────────────
         self._build_settings()
@@ -375,6 +371,7 @@ class CMSApp(tk.Tk):
     def _reload_creds_from_env(self) -> None:
         """Pull RTSP_USER / RTSP_PASS from environment and refresh fields + config."""
         import os
+
         user = os.getenv('RTSP_USER', '')
         passwd = os.getenv('RTSP_PASS', '')
         self._user_var.set(user)
@@ -388,9 +385,7 @@ class CMSApp(tk.Tk):
     def _show_config_menu(self, event: tk.Event) -> None:
         """Pop up a small context menu on the config filename label."""
         menu = tk.Menu(
-            self, tearoff=0, bg=SURFACE, fg=TEXT,
-            activebackground=OVERLAY, activeforeground=TEXT,
-            relief='flat', bd=0
+            self, tearoff=0, bg=SURFACE, fg=TEXT, activebackground=OVERLAY, activeforeground=TEXT, relief='flat', bd=0
         )
         cfg_path = self.player.config.config_toml
         menu.add_command(
@@ -410,6 +405,7 @@ class CMSApp(tk.Tk):
     def _cfg_open_file(self) -> None:
         """Open the config TOML in the system default text editor."""
         import os
+
         path = self.player.config.config_toml
         if path:
             os.startfile(str(path))
@@ -417,6 +413,7 @@ class CMSApp(tk.Tk):
     def _cfg_open_path(self) -> None:
         """Reveal the config file's parent directory in Windows Explorer."""
         import subprocess
+
         path = self.player.config.config_toml
         if path:
             subprocess.Popen(['explorer', str(path.parent)])
@@ -425,6 +422,7 @@ class CMSApp(tk.Tk):
         """Let the user pick a new TOML file and hot-reload the config."""
         from tkinter import filedialog
         from .config import CMSConfig
+
         current = self.player.config.config_toml
         initial_dir = str(current.parent) if current else '/'
         new_path_str = filedialog.askopenfilename(
@@ -488,6 +486,7 @@ class CMSApp(tk.Tk):
         # winfo_id() returns Tk's internal child-frame HWND on Windows.
         # We must walk up to the real decorated top-level window via GetParent.
         import ctypes
+
         child_hwnd = self.winfo_id()
         hwnd = ctypes.windll.user32.GetParent(child_hwnd) or child_hwnd
         log.debug('maybe_hwnd: child_hwnd=%s top_hwnd=%s', child_hwnd, hwnd)

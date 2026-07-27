@@ -27,7 +27,7 @@ class CMSPlayer:
 
     def __init__(self, config: CMSConfig = None) -> None:
         config = config or CMSConfig()
-        self.config = config
+        self.config: CMSConfig = config
         self.stream_quality: StreamQuality = config.default_quality
         self._active_channels: list[int] = []
         self._processes: list[subprocess.Popen] = []

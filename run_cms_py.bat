@@ -3,4 +3,4 @@ set CONF=%1
 rem if no conf passed we use default
 if "%CONF%"=="" set CONF=./default_conf.toml
 
-uv tool run %THIS_DIR% --gui -C %CONF%
+uv run --project %THIS_DIR% cms --gui -C %CONF%

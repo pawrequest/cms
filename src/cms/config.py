@@ -30,21 +30,20 @@ class CMSConfig:
 
     @property
     def all_channels(self) -> list[int]:
-        return list(self.channels.keys()) if self.channels \
-            else list(range(1, self.max_channel + 1))
+        return list(self.channels.keys()) if self.channels else list(range(1, self.max_channel + 1))
 
     @property
     def initial_group(self) -> list[int]:
-        return self.channel_groups[self.initial_group_name] if self.initial_group_name \
-            else list(self.channels.values())[0] if self.channels \
+        return (
+            self.channel_groups[self.initial_group_name]
+            if self.initial_group_name
+            else list(self.channels.values())[0]
+            if self.channels
             else self.all_channels
+        )
 
     # VLC
-    vlc_path: str = field(
-        default_factory=lambda: os.getenv(
-            'VLC_PATH', r'C:\Program Files (x86)\VideoLAN\VLC\vlc.exe'
-        )
-    )
+    vlc_path: str = field(default_factory=lambda: os.getenv('VLC_PATH', r'C:\Program Files (x86)\VideoLAN\VLC\vlc.exe'))
     minimal_view: bool = True  # hide controls/menu bar (--qt-minimal-view)
 
     # Stream tuning
@@ -59,10 +58,10 @@ class CMSConfig:
 
     url_template: str = field(
         default_factory=lambda: (
-            "rtsp://{rtsp_host}:{rtsp_port}"
-            "/user={rtsp_user}&password={rtsp_pass}"
-            "&channel={channel}&stream={stream}.sdp"
-            "?real_stream--rtp-caching={rtp_caching}"
+            'rtsp://{rtsp_host}:{rtsp_port}'
+            '/user={rtsp_user}&password={rtsp_pass}'
+            '&channel={channel}&stream={stream}.sdp'
+            '?real_stream--rtp-caching={rtp_caching}'
         )
     )
 

@@ -59,8 +59,7 @@ def _build_group_shortcuts(config: CMSConfig) -> dict[str, str]:
                 break
         if not assigned:
             log.warning(
-                'Could not assign a unique shortcut for group %r — '
-                'all letters are taken or reserved.',
+                'Could not assign a unique shortcut for group %r — ' 'all letters are taken or reserved.',
                 group_key,
             )
 
@@ -73,11 +72,8 @@ def _print_status(player: CMSPlayer, group_shortcuts: dict[str, str]) -> None:
     channels_map = player.config.channels  # dict[int, str], may be empty
     if channels_map:
         channels_str = (
-                ', '.join(
-                    f'{c} · {channels_map[c]}' if c in channels_map else str(c)
-                    for c in player.active_channels
-                )
-                or '[dim]none[/dim]'
+            ', '.join(f'{c} · {channels_map[c]}' if c in channels_map else str(c) for c in player.active_channels)
+            or '[dim]none[/dim]'
         )
     else:
         channels_str = ', '.join(str(c) for c in player.active_channels) or '[dim]none[/dim]'
@@ -167,7 +163,6 @@ def ui_loop(player: CMSPlayer) -> None:
             player.open_group(group_key)
             player.tiler.tile()
 
-
         else:
             # Try to parse as channel numbers
             nums = _parse_channels(cmd)
@@ -206,9 +201,7 @@ def ui_loop(player: CMSPlayer) -> None:
     show_default=True,
     help='Initial stream quality.',
 )
-@click.option(
-    '--host', default=None, envvar='RTSP_HOST', help='RTSP host (overrides RTSP_HOST env var).'
-)
+@click.option('--host', default=None, envvar='RTSP_HOST', help='RTSP host (overrides RTSP_HOST env var).')
 @click.option('--gui', is_flag=True, default=False, help='Launch the graphical interface instead.')
 @click.option(
     '--config',
@@ -236,9 +229,7 @@ def main(channels, quality, host, gui, config_path) -> None:
     log.debug('Config loaded: path=%s debug=%s host=%s', config.config_toml, config.debug, config.rtsp_host)
 
     if quality:
-        config.default_quality = (
-            StreamQuality.LOW if quality.lower().startswith('l') else StreamQuality.HIGH
-        )
+        config.default_quality = StreamQuality.LOW if quality.lower().startswith('l') else StreamQuality.HIGH
         log.debug('Quality overridden to %s', config.default_quality)
     if host:
         config.rtsp_host = host
