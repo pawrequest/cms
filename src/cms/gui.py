@@ -484,7 +484,7 @@ class CMSApp(tk.Tk):
         if not should_tile_gui(num_channels):
             return []
 
-        return [self.hwnd]
+        # return [self.hwnd]
         # winfo_id() returns Tk's internal child-frame HWND on Windows.
         # We must walk up to the real decorated top-level window via GetParent.
         import ctypes
