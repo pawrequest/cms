@@ -34,13 +34,7 @@ class CMSConfig:
 
     @property
     def initial_group(self) -> list[int]:
-        return (
-            self.channel_groups[self.initial_group_name]
-            if self.initial_group_name
-            else list(self.channels.values())[0]
-            if self.channels
-            else self.all_channels
-        )
+        return self.channel_groups.get(self.initial_group_name, self.all_channels)
 
     # VLC
     vlc_path: str = field(default_factory=lambda: os.getenv('VLC_PATH', r'C:\Program Files (x86)\VideoLAN\VLC\vlc.exe'))
